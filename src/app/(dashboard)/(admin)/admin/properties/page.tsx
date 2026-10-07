@@ -1,3 +1,5 @@
+"use client";
+
 import { ShieldCheck, Building2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
