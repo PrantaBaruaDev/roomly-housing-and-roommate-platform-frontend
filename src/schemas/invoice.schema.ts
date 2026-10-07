@@ -1,15 +1,21 @@
 import { z } from "zod";
 
-export const invoiceLineItemSchema = z.object({
-  label: z.string().min(1, "Line item needs a label"),
-  amount: z.coerce.number().positive("Amount must be greater than 0"),
-  kind: z.enum(["rent", "utility", "maintenance", "other"]),
+export const invoiceUtilitySchema = z.object({
+  name: z.string().min(1, "Utility needs a name"),
+  amount: z.coerce.number().nonnegative("Amount cannot be negative"),
 });
 
 export const invoiceSchema = z.object({
-  roomId: z.string().min(1, "Select a room"),
-  period: z.string().min(1, "Select the billing month"),
+  roomOccupantId: z.string().min(1, "Select a room occupant"),
+  billMonth: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "Use YYYY-MM format"),
+  type: z
+    .enum(["COMBINED_RENT_UTILITY", "MAINTENANCE_FEE"])
+    .default("COMBINED_RENT_UTILITY"),
+  rentAmount: z.coerce.number().nonnegative("Rent cannot be negative"),
+  utilityDetails: z.array(invoiceUtilitySchema).default([]),
   dueDate: z.string().min(1, "Set a due date"),
-  lineItems: z.array(invoiceLineItemSchema).min(1, "Add at least one line item"),
 });
+
 export type InvoiceFormValues = z.infer<typeof invoiceSchema>;

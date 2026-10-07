@@ -1,11 +1,36 @@
-import { apiClient, type PaginatedResponse } from "@/lib/api-client";
+import {
+  apiClient,
+  type PaginatedResponse,
+  type SingleResponse,
+} from "@/lib/api-client";
+import type { ApiInvoice, BackendBillStatus } from "@/types/invoice";
 import type { InvoiceFormValues } from "@/schemas/invoice.schema";
-import type { Invoice } from "@/types/invoice";
+
+const BASE = "/invoice";
 
 export const invoicesApi = {
-  list: (params?: { tenantId?: string; ownerId?: string; status?: string; page?: number }) =>
-    apiClient<PaginatedResponse<Invoice>>("/invoices", { params }),
-  get: (id: string) => apiClient<Invoice>(`/invoices/${id}`),
-  create: (payload: InvoiceFormValues) => apiClient<Invoice>("/invoices", { method: "POST", body: payload }),
-  issue: (id: string) => apiClient<Invoice>(`/invoices/${id}/issue`, { method: "POST" }),
+  list: (params?: {
+    status?: BackendBillStatus;
+    page?: number;
+    limit?: number;
+  }) =>
+    apiClient<PaginatedResponse<ApiInvoice>>(BASE, { params }),
+
+  get: (id: string) =>
+    apiClient<SingleResponse<ApiInvoice>>(`${BASE}/${id}`).then((r) => r.data),
+
+  create: (payload: InvoiceFormValues) =>
+    apiClient<SingleResponse<ApiInvoice>>(BASE, {
+      method: "POST",
+      body: payload,
+    }).then((r) => r.data),
+
+  update: (id: string, payload: Partial<InvoiceFormValues>) =>
+    apiClient<SingleResponse<ApiInvoice>>(`${BASE}/${id}`, {
+      method: "PATCH",
+      body: payload,
+    }).then((r) => r.data),
+
+  remove: (id: string) =>
+    apiClient<void>(`${BASE}/${id}`, { method: "DELETE" }),
 };
