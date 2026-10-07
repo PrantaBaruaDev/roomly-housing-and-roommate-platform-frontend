@@ -7,12 +7,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "@/hooks/use-auth";
 import { loginSchema } from "@/schemas/auth.schema";
+import { Building2, DoorOpen, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const DEMO_ACCOUNTS = [
+  {
+    role: "Admin" as const,
+    email: "testeradmin@gmail.com",
+    password: "Tester@admin12345",
+    icon: ShieldCheck,
+    accent: "text-blueprint",
+  },
+  {
+    role: "Owner" as const,
+    email: "testerowner@gmail.com",
+    password: "Tester@owner12345",
+    icon: Building2,
+    accent: "text-brass",
+  },
+  {
+    role: "Tenant" as const,
+    email: "tester.tenant@gmail.com",
+    password: "Tester@subscribercustomer12345",
+    icon: DoorOpen,
+    accent: "text-moss",
+  },
+];
 
 export default function LoginPage() {
   const login = useLogin();
   const [values, setValues] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-console.log(login,"page login route...")
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,6 +50,11 @@ console.log(login,"page login route...")
     login.mutate(result.data);
   }
 
+  function fillDemo(email: string, password: string) {
+    setValues({ email, password });
+    setErrors({});
+  }
+
   return (
     <div>
       <p className="font-mono-plan text-xs uppercase tracking-wide text-muted-foreground">Sign in</p>
@@ -32,6 +62,33 @@ console.log(login,"page login route...")
       <p className="mt-2 text-sm text-muted-foreground">
         Enter your details to reach your dashboard.
       </p>
+
+      <div className="mt-6 rounded-lg border border-dashed border-border bg-secondary/30 p-3">
+          <p className="mb-2 font-mono-plan text-[10px] uppercase tracking-wide text-muted-foreground">
+            Demo accounts
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {DEMO_ACCOUNTS.map((acct) => {
+              const Icon = acct.icon;
+              const active =
+                values.email === acct.email && values.password === acct.password;
+              return (
+                <button
+                  key={acct.role}
+                  type="button"
+                  onClick={() => fillDemo(acct.email, acct.password)}
+                  className={cn(
+                    "flex flex-col items-start gap-1 rounded-md border bg-background px-2.5 py-2 text-left text-xs transition-colors hover:border-primary/40 hover:bg-primary/5",
+                    active ? "border-primary bg-primary/10" : "border-border",
+                  )}
+                >
+                  <Icon className={cn("h-3.5 w-3.5", acct.accent)} />
+                  <span className="font-medium">{acct.role}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
