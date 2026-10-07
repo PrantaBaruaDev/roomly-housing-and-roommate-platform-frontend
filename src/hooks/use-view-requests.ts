@@ -1,12 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { viewRequestsApi } from "@/features/view-requests/api";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  viewRequestsApi,
+  type UpdateViewRequestPayload,
+} from "@/features/view-requests/api";
 import { queryKeys } from "./query-keys";
-import type { ViewRequestCounterValues, ViewRequestFormValues } from "@/schemas/application.schema";
+import type { BackendViewRequestStatus } from "@/types/view-request";
+import type { ViewRequestFormValues } from "@/schemas/application.schema";
 
-export function useViewRequests(params?: { tenantId?: string; ownerId?: string; status?: string }) {
+export function useViewRequests(params?: {
+  status?: BackendViewRequestStatus;
+  roomId?: string;
+  page?: number;
+  limit?: number;
+}) {
   return useQuery({
     queryKey: queryKeys.viewRequests.list(params),
     queryFn: () => viewRequestsApi.list(params),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -14,22 +24,20 @@ export function useCreateViewRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ViewRequestFormValues) => viewRequestsApi.create(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
   });
 }
 
-export function useCounterViewRequest() {
+export function useUpdateViewRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ViewRequestCounterValues) => viewRequestsApi.counter(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
-  });
-}
-
-export function useConfirmViewRequest() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => viewRequestsApi.confirm(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
+    mutationFn: ({
+      id,
+      ...payload
+    }: { id: string } & UpdateViewRequestPayload) =>
+      viewRequestsApi.update(id, payload),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
   });
 }

@@ -3,93 +3,155 @@
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
+import { ViewRequestCard } from "@/components/shared/view-request-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { formatDate } from "@/lib/utils";
-import type { ViewRequestStatus } from "@/lib/constants";
-
-const requests: {
-  id: string;
-  tenantName: string;
-  roomNumber: string;
-  proposedDate: string;
-  status: ViewRequestStatus;
-}[] = [
-  { id: "1", tenantName: "Owen Carter", roomNumber: "R-110", proposedDate: "2026-09-22T15:00:00", status: "requested" },
-  { id: "2", tenantName: "Lucia Alvarez", roomNumber: "R-204", proposedDate: "2026-09-24T11:00:00", status: "confirmed" },
-];
+import {
+  useViewRequests,
+  useUpdateViewRequest,
+} from "@/hooks/use-view-requests";
+import { toViewRequestCardVM } from "@/lib/adapters/view-request";
+import { DataPagination } from "@/components/shared/data-pagination";
 
 export default function OwnerViewRequestsPage() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, error } = useViewRequests({ page });
+  const update = useUpdateViewRequest();
+  const requests = (data?.data ?? []).map(toViewRequestCardVM);
+
+  const [counterFor, setCounterFor] = useState<string | null>(null);
   const [counterDate, setCounterDate] = useState("");
+  const [counterNote, setCounterNote] = useState("");
+
+  function submitCounter(id: string) {
+    if (!counterDate) return;
+    update.mutate(
+      {
+        id,
+        status: "OWNER_RESCHEDULED",
+        counterDate: new Date(counterDate).toISOString(),
+        ownerFeedback: counterNote || undefined,
+      },
+      {
+        onSuccess: () => {
+          setCounterFor(null);
+          setCounterDate("");
+          setCounterNote("");
+        },
+      },
+    );
+  }
 
   return (
     <div>
-      <PageHeader title="View requests" description="Confirm or reschedule room viewings tenants have asked for." />
+      <PageHeader
+        title="View requests"
+        description="Confirm or reschedule room viewings tenants have asked for."
+      />
 
-      {requests.length === 0 ? (
-        <EmptyState icon={CalendarClock} title="No view requests" description="Tenant requests to see a room will show up here." />
-      ) : (
+      {isLoading && (
+        <p className="py-16 text-center text-sm text-muted-foreground">
+          Loading requests…
+        </p>
+      )}
+
+      {isError && (
+        <p className="py-16 text-center text-sm text-destructive">
+          {(error as Error)?.message ?? "Failed to load view requests."}
+        </p>
+      )}
+
+      {!isLoading && !isError && requests.length === 0 && (
+        <EmptyState
+          icon={CalendarClock}
+          title="No view requests"
+          description="Tenant requests to see a room will show up here."
+        />
+      )}
+
+      {!isLoading && !isError && requests.length > 0 && (
         <div className="flex flex-col gap-4">
           {requests.map((r) => (
-            <Card key={r.id}>
-              <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{r.tenantName}</p>
-                    <StatusBadge status={r.status} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Room {r.roomNumber} · Proposed{" "}
-                    {new Date(r.proposedDate).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
-                  </p>
-                </div>
-
-                {r.status === "requested" && (
-                  <div className="flex shrink-0 gap-2">
-                    <Dialog>
+            <ViewRequestCard
+              key={r.id}
+              request={r}
+              viewerRole="owner"
+              actions={
+                r.status === "requested" ? (
+                  <>
+                    <Dialog
+                      open={counterFor === r.id}
+                      onOpenChange={(open) =>
+                        setCounterFor(open ? r.id : null)
+                      }
+                    >
                       <DialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          Propose new time
+                        <Button size="sm" variant="outline" disabled={update.isPending}>
+                          Reschedule
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Counter-propose a time</DialogTitle>
+                          <DialogTitle>Propose a new time</DialogTitle>
                         </DialogHeader>
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="counter">New date & time</Label>
-                          <Input
-                            id="counter"
-                            type="datetime-local"
-                            value={counterDate}
-                            onChange={(e) => setCounterDate(e.target.value)}
-                          />
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="counterDate">New date & time</Label>
+                            <Input
+                              id="counterDate"
+                              type="datetime-local"
+                              value={counterDate}
+                              onChange={(e) => setCounterDate(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="counterNote">Note (optional)</Label>
+                            <Input
+                              id="counterNote"
+                              value={counterNote}
+                              onChange={(e) => setCounterNote(e.target.value)}
+                              placeholder="Why are you rescheduling?"
+                            />
+                          </div>
                         </div>
                         <DialogFooter>
-                          <Button>Send counter-offer</Button>
+                          <Button
+                            disabled={!counterDate || update.isPending}
+                            onClick={() => submitCounter(r.id)}
+                          >
+                            Send counter-offer
+                          </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Button size="sm">Confirm</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
+                    <Button
+                      size="sm"
+                      disabled={update.isPending}
+                      onClick={() =>
+                        update.mutate({ id: r.id, status: "APPROVED" })
+                      }
+                    >
+                      Confirm
+                    </Button>
+                  </>
+                ) : null
+              }
+            />
           ))}
         </div>
       )}
+      <DataPagination meta={data?.meta} onPageChange={setPage} />
     </div>
   );
 }

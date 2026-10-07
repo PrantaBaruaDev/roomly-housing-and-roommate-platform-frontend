@@ -1,64 +1,81 @@
+"use client";
+
 import { CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
+import { ViewRequestCard } from "@/components/shared/view-request-card";
 import { Button } from "@/components/ui/button";
-import type { ViewRequestStatus } from "@/lib/constants";
-
-const requests: {
-  id: string;
-  property: string;
-  roomNumber: string;
-  proposedDate: string;
-  counterDate?: string;
-  status: ViewRequestStatus;
-}[] = [
-  { id: "1", property: "Riverside Cottages", roomNumber: "R-110", proposedDate: "2026-09-22T15:00:00", status: "requested" },
-  {
-    id: "2",
-    property: "Birchwood House",
-    roomNumber: "R-204",
-    proposedDate: "2026-09-20T10:00:00",
-    counterDate: "2026-09-24T11:00:00",
-    status: "countered",
-  },
-];
+import {
+  useViewRequests,
+  useUpdateViewRequest,
+} from "@/hooks/use-view-requests";
+import { toViewRequestCardVM } from "@/lib/adapters/view-request";
 
 export default function TenantViewRequestsPage() {
+  const { data, isLoading, isError, error } = useViewRequests();
+  const update = useUpdateViewRequest();
+  const requests = (data?.data ?? []).map(toViewRequestCardVM);
+
   return (
     <div>
-      <PageHeader title="View requests" description="Track requests to see a room in person." />
+      <PageHeader
+        title="View requests"
+        description="Track the viewings you've asked for."
+      />
 
-      {requests.length === 0 ? (
-        <EmptyState icon={CalendarClock} title="No view requests" description="Request a viewing from any room's listing." />
-      ) : (
+      {isLoading && (
+        <p className="py-16 text-center text-sm text-muted-foreground">
+          Loading requests…
+        </p>
+      )}
+
+      {isError && (
+        <p className="py-16 text-center text-sm text-destructive">
+          {(error as Error)?.message ?? "Failed to load view requests."}
+        </p>
+      )}
+
+      {!isLoading && !isError && requests.length === 0 && (
+        <EmptyState
+          icon={CalendarClock}
+          title="No view requests"
+          description="Request a viewing from any room listing to see it in person."
+        />
+      )}
+
+      {!isLoading && !isError && requests.length > 0 && (
         <div className="flex flex-col gap-4">
           {requests.map((r) => (
-            <Card key={r.id}>
-              <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{r.property}</p>
-                    <StatusBadge status={r.status} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Room {r.roomNumber} ·{" "}
-                    {r.status === "countered" && r.counterDate
-                      ? `Owner proposed ${new Date(r.counterDate).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`
-                      : `You proposed ${new Date(r.proposedDate).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
-                  </p>
-                </div>
-                {r.status === "countered" && (
-                  <div className="flex shrink-0 gap-2">
-                    <Button size="sm" variant="outline">
+            <ViewRequestCard
+              key={r.id}
+              request={r}
+              viewerRole="tenant"
+              actions={
+                r.status === "countered" ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={update.isPending}
+                      onClick={() =>
+                        update.mutate({ id: r.id, status: "REJECTED" })
+                      }
+                    >
                       Decline
                     </Button>
-                    <Button size="sm">Accept new time</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    <Button
+                      size="sm"
+                      disabled={update.isPending}
+                      onClick={() =>
+                        update.mutate({ id: r.id, status: "APPROVED" })
+                      }
+                    >
+                      Accept new time
+                    </Button>
+                  </>
+                ) : null
+              }
+            />
           ))}
         </div>
       )}
