@@ -1,3 +1,5 @@
+"use client";
+
 import { Search, ClipboardList, Receipt, Users } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
