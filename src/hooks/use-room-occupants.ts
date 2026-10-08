@@ -1,18 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import { roomOccupantsApi } from "@/features/room-occupants/api";
-import { queryKeys } from "./query-keys";
+"use client";
 
-export function useMyRoommates() {
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { roomOccupantsApi } from "@/features/room-occupants/api";
+
+const OCCUPANTS_KEY = ["room-occupants", "list"] as const;
+
+export function useRoomOccupants(params?: { page?: number; limit?: number }) {
   return useQuery({
-    queryKey: queryKeys.roomOccupants.mine,
-    queryFn: () => roomOccupantsApi.listMine(),
+    queryKey: [...OCCUPANTS_KEY, params],
+    queryFn: () => roomOccupantsApi.list(params),
+    placeholderData: keepPreviousData,
   });
 }
 
-export function useRoomOccupants(roomId: string) {
-  return useQuery({
-    queryKey: queryKeys.roomOccupants.byRoom(roomId),
-    queryFn: () => roomOccupantsApi.listByRoom(roomId),
-    enabled: Boolean(roomId),
-  });
+export function useActiveOccupants(params?: { page?: number }) {
+  const query = useRoomOccupants(params);
+  const active = (query.data?.data ?? []).filter((o) => !o.movedOutAt);
+  return { ...query, activeCount: active.length };
 }

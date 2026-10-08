@@ -1,8 +1,11 @@
-import { apiClient } from "@/lib/api-client";
-import type { RoomOccupant } from "@/types/room-occupant";
+import {
+  apiClient,
+  type PaginatedResponse,
+} from "@/lib/api-client";
+import type { ApiRoomOccupant } from "@/types/room-occupant";
+
+const BASE = "/room_occupant";
 
 export const roomOccupantsApi = {
-  listByRoom: (roomId: string) => apiClient<RoomOccupant[]>(`/rooms/${roomId}/occupants`),
-  listMine: () => apiClient<RoomOccupant[]>("/room_occupant/me"),
-  listRoommates: (roomId: string) => apiClient<RoomOccupant[]>(`/rooms/${roomId}/occupants/roommates`),
+  list: (params?: { page?: number; limit?: number }) => apiClient<PaginatedResponse<ApiRoomOccupant>>(BASE, { params }),
 };
