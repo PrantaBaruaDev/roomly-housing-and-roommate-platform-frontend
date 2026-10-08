@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { propertiesApi } from "@/features/properties/api";
 import { queryKeys } from "./query-keys";
 import type { PropertyFormValues } from "@/schemas/property.schema";
@@ -11,6 +11,7 @@ export function useProperties(params?: {
   return useQuery({
     queryKey: queryKeys.properties.list(params),
     queryFn: () => propertiesApi.list(params),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -18,6 +19,7 @@ export function useOwnerProperties(params?: { page?: number; search?: string }) 
   return useQuery({
     queryKey: [...queryKeys.properties.all, "owner", params],
     queryFn: () => propertiesApi.listOwnerOwn(params),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -10,9 +10,12 @@ import { CreatePropertyDialog } from "@/components/shared/create-property-dialog
 import { useOwnerProperties } from "@/hooks/use-properties";
 import { toPropertyCardVM } from "@/lib/adapters/property";
 import Link from "next/link";
+import { DataPagination } from "@/components/shared/data-pagination";
+import { useState } from "react";
 
 export default function OwnerPropertiesPage() {
-  const { data, isLoading, isError, error } = useOwnerProperties();
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, error } = useOwnerProperties({ page });
   const properties = (data?.data ?? []).map(toPropertyCardVM);
 
   return (
@@ -45,6 +48,7 @@ export default function OwnerPropertiesPage() {
       )}
 
       {!isLoading && !isError && properties.length > 0 && (
+        <>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {properties.map((p) => (
             <Card key={p.id}>
@@ -138,6 +142,9 @@ export default function OwnerPropertiesPage() {
             </Card>
           ))}
         </div>
+
+        <DataPagination meta={data?.meta} currentPage={page} onPageChange={setPage} />
+        </>
       )}
     </div>
   );

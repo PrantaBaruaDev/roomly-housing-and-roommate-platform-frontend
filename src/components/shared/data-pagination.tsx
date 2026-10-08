@@ -31,41 +31,37 @@ function getPageRange(current: number, total: number): (number | "…")[] {
 export function DataPagination({
   meta,
   onPageChange,
+  currentPage,
   className,
 }: {
   meta: PaginationMeta | undefined;
   onPageChange: (page: number) => void;
+  currentPage?: number;
   className?: string;
 }) {
   if (!meta) return null;
 
-  const { page, limit, total, totalPages } = meta;
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-  const range = getPageRange(page, totalPages);
+  const { limit, total, totalPages } = meta;
+  const activePage = currentPage ?? meta.page;
+  const from = (activePage - 1) * limit + 1;
+  const to = Math.min(activePage * limit, total);
+  const range = getPageRange(activePage, totalPages);
 
   return (
-    <div
-      className={cn(
-        "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
-        className,
-      )}
-    >
-      {/* Count */}
+    <div className={cn("mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
       <p className="text-xs text-muted-foreground">
         Showing <span className="font-medium text-foreground">{from}</span>–
         <span className="font-medium text-foreground">{to}</span> of{" "}
         <span className="font-medium text-foreground">{total}</span>
       </p>
 
-      {/* Navigation */}
       <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="sm"
           className="h-8 gap-1 px-2"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
+          disabled={activePage <= 1}
+          onClick={() => onPageChange(activePage - 1)}
           aria-label="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -74,21 +70,15 @@ export function DataPagination({
 
         {range.map((item, i) =>
           item === "…" ? (
-            <span
-              key={`gap-${i}`}
-              className="px-2 text-xs text-muted-foreground"
-              aria-hidden
-            >
-              …
-            </span>
+            <span key={`gap-${i}`} className="px-2 text-xs text-muted-foreground" aria-hidden>…</span>
           ) : (
             <Button
               key={item}
-              variant={item === page ? "default" : "outline"}
+              variant={item === activePage ? "default" : "outline"}
               size="sm"
               className="h-8 min-w-8 px-2"
               onClick={() => onPageChange(item)}
-              aria-current={item === page ? "page" : undefined}
+              aria-current={item === activePage ? "page" : undefined}
             >
               {item}
             </Button>
@@ -99,8 +89,8 @@ export function DataPagination({
           variant="outline"
           size="sm"
           className="h-8 gap-1 px-2"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
+          disabled={activePage >= totalPages}
+          onClick={() => onPageChange(activePage + 1)}
           aria-label="Next page"
         >
           <span className="hidden sm:inline">Next</span>
