@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Home, Store, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +16,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCreateProperty } from "@/hooks/use-properties";
-import { propertySchema, type PropertyFormValues } from "@/schemas/property.schema";
+import {
+  propertySchema,
+  type PropertyFormValues,
+} from "@/schemas/property.schema";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
+type PropertyFormOutput = z.output<typeof propertySchema>;
 type PropertyType = PropertyFormValues["propertyType"];
 
 const TYPE_OPTIONS: {
@@ -30,74 +37,69 @@ const TYPE_OPTIONS: {
   { value: "MIXED", label: "Mixed use", hint: "Combined residential + commercial", icon: Building2 },
 ];
 
-const DEFAULT_FORM = {
-  title: "",
-  description: "",
-  address: "",
-  city: "",
-  propertyType: "RESIDENTIAL" as PropertyType,
-  amenities: [] as string[],
-};
-
 export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
   const create = useCreateProperty();
-
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState(DEFAULT_FORM);
   const [amenityInput, setAmenityInput] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function reset() {
-    setValues(DEFAULT_FORM);
-    setAmenityInput("");
-    setErrors({});
-  }
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<PropertyFormOutput>({
+    resolver: zodResolver(propertySchema) as any,
+    defaultValues: {
+      title: "",
+      description: "",
+      address: "",
+      city: "",
+      propertyType: "RESIDENTIAL",
+      amenities: [],
+    },
+  });
+
+  const amenities = watch("amenities") ?? [];
 
   function addAmenity() {
     const next = amenityInput.trim();
-    if (!next) return;
-    if (values.amenities.includes(next)) {
+    if (!next || amenities.includes(next)) {
       setAmenityInput("");
       return;
     }
-    setValues((v) => ({ ...v, amenities: [...v.amenities, next] }));
+    setValue("amenities", [...amenities, next], { shouldValidate: true });
     setAmenityInput("");
   }
 
   function removeAmenity(name: string) {
-    setValues((v) => ({
-      ...v,
-      amenities: v.amenities.filter((a) => a !== name),
-    }));
+    setValue(
+      "amenities",
+      amenities.filter((a) => a !== name),
+      { shouldValidate: true },
+    );
   }
 
-  function submit() {
-    const result = propertySchema.safeParse(values);
-
-    if (!result.success) {
-      setErrors(
-        Object.fromEntries(
-          result.error.issues.map((i) => [String(i.path[0]), i.message]),
-        ),
-      );
-      return;
-    }
-
-    setErrors({});
-    create.mutate(result.data, {
+  const onSubmit = (values: PropertyFormValues) => {
+    create.mutate(values, {
       onSuccess: () => {
         setOpen(false);
         reset();
       },
     });
-  }
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) reset();
+        if (!v) {
+          reset();
+          setAmenityInput("");
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -113,19 +115,19 @@ export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
           <DialogTitle>Add a new property</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="title">Property name</Label>
             <Input
               id="title"
               placeholder="e.g. Riverside 2BR Flat in Khulna"
-              value={values.title}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, title: e.target.value }))
-              }
+              {...register("title")}
             />
             {errors.title && (
-              <p className="text-xs text-destructive">{errors.title}</p>
+              <p className="text-xs text-destructive">{errors.title.message}</p>
             )}
           </div>
 
@@ -134,15 +136,14 @@ export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
             <textarea
               id="description"
               rows={3}
-              placeholder="What makes this place a good fit? Furnishings, nearby transit, natural light…"
-              value={values.description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-none transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="What makes this place a good fit?"
+              {...register("description")}
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-none transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
             {errors.description && (
-              <p className="text-xs text-destructive">{errors.description}</p>
+              <p className="text-xs text-destructive">
+                {errors.description.message}
+              </p>
             )}
           </div>
 
@@ -152,65 +153,59 @@ export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
               <Input
                 id="address"
                 placeholder="72 KDA Avenue, Mojgunni"
-                value={values.address}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, address: e.target.value }))
-                }
+                {...register("address")}
               />
               {errors.address && (
-                <p className="text-xs text-destructive">{errors.address}</p>
+                <p className="text-xs text-destructive">{errors.address.message}</p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                placeholder="Khulna"
-                value={values.city}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, city: e.target.value }))
-                }
-              />
+              <Input id="city" placeholder="Khulna" {...register("city")} />
               {errors.city && (
-                <p className="text-xs text-destructive">{errors.city}</p>
+                <p className="text-xs text-destructive">{errors.city.message}</p>
               )}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Property type</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {TYPE_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                const active = values.propertyType === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      setValues((v) => ({ ...v, propertyType: opt.value }))
-                    }
-                    className={cn(
-                      "flex flex-col items-start gap-1.5 rounded-md border px-3 py-2.5 text-left transition-colors",
-                      active
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-secondary",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "h-4 w-4",
-                        active ? "text-primary" : "text-muted-foreground",
-                      )}
-                    />
-                    <span className="text-xs font-medium">{opt.label}</span>
-                    <span className="text-[10px] leading-tight text-muted-foreground">
-                      {opt.hint}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <Controller
+              name="propertyType"
+              control={control}
+              render={({ field }) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {TYPE_OPTIONS.map((opt) => {
+                    const Icon = opt.icon;
+                    const active = field.value === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => field.onChange(opt.value)}
+                        className={cn(
+                          "flex flex-col items-start gap-1.5 rounded-md border px-3 py-2.5 text-left transition-colors",
+                          active
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:bg-secondary",
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "h-4 w-4",
+                            active ? "text-primary" : "text-muted-foreground",
+                          )}
+                        />
+                        <span className="text-xs font-medium">{opt.label}</span>
+                        <span className="text-[10px] leading-tight text-muted-foreground">
+                          {opt.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -239,9 +234,9 @@ export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
               </Button>
             </div>
 
-            {values.amenities.length > 0 && (
+            {amenities.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1.5">
-                {values.amenities.map((a) => (
+                {amenities.map((a) => (
                   <span
                     key={a}
                     className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-2.5 py-0.5 text-xs"
@@ -250,40 +245,36 @@ export function CreatePropertyDialog({ trigger }: { trigger?: ReactNode }) {
                     <button
                       type="button"
                       onClick={() => removeAmenity(a)}
-                      className="text-muted-foreground hover:text-foreground"
                       aria-label={`Remove ${a}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                     </button>
                   </span>
                 ))}
               </div>
             )}
-            <p className="text-[11px] text-muted-foreground">
-              Press Enter to add. Optional — you can add these later.
-            </p>
           </div>
-        </div>
 
-        {create.isError && (
-          <p className="text-sm text-destructive">
-            {(create.error as Error).message}
-          </p>
-        )}
+          {create.isError && (
+            <p className="text-sm text-destructive">
+              {(create.error as Error).message}
+            </p>
+          )}
 
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={create.isPending}
-          >
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create property"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={create.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {create.isPending ? "Creating…" : "Create property"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

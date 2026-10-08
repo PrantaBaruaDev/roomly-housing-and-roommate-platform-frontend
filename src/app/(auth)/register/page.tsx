@@ -1,110 +1,134 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Building2, DoorOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { useRegister } from "@/hooks/use-auth";
-import { registerSchema } from "@/schemas/auth.schema";
+import { registerSchema, type RegisterFormValues } from "@/schemas/auth.schema";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
-  const register = useRegister();
-  const [role, setRole] = useState<"OWNER" | "TENANT">("TENANT");
-  const [values, setValues] = useState({ name: "", email: "", password: "", confirmPassword: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const register_ = useRegister();
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const result = registerSchema.safeParse({ ...values, role });
-    if (!result.success) {
-      setErrors(Object.fromEntries(result.error.issues.map((i) => [String(i.path[0]), i.message])));
-      return;
-    }
-    setErrors({});
-    register.mutate(result.data);
-  }
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "tenant",
+    },
+  });
+
+  const role = watch("role");
+
+  const onSubmit = (values: RegisterFormValues) => {
+    register_.mutate(values);
+  };
 
   return (
     <div>
-      <p className="font-mono-plan text-xs uppercase tracking-wide text-muted-foreground">Create account</p>
+      <p className="font-mono-plan text-xs uppercase tracking-wide text-muted-foreground">
+        Create account
+      </p>
       <h1 className="mt-2 font-display text-3xl">Join Roomly</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Tell us how you'll use the platform.</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Tell us how you&apos;ll use the platform.
+      </p>
 
       <div className="mt-6 grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => setRole("TENANT")}
+          onClick={() => setValue("role", "tenant", { shouldValidate: true })}
           className={cn(
             "flex flex-col items-start gap-2 rounded-md border px-4 py-3 text-left transition-colors",
-            role === "TENANT" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
+            role === "tenant" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
           )}
         >
           <DoorOpen className="h-4 w-4" />
-          <span className="text-sm font-medium">I'm a tenant</span>
+          <span className="text-sm font-medium">I&apos;m a tenant</span>
           <span className="text-xs text-muted-foreground">Looking for a room</span>
         </button>
         <button
           type="button"
-          onClick={() => setRole("OWNER")}
+          onClick={() => setValue("role", "owner", { shouldValidate: true })}
           className={cn(
             "flex flex-col items-start gap-2 rounded-md border px-4 py-3 text-left transition-colors",
-            role === "OWNER" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"
+            role === "owner" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
           )}
         >
           <Building2 className="h-4 w-4" />
-          <span className="text-sm font-medium">I'm an owner</span>
+          <span className="text-sm font-medium">I&apos;m an owner</span>
           <span className="text-xs text-muted-foreground">Listing a property</span>
         </button>
       </div>
+      {errors.role && (
+        <p className="mt-1 text-xs text-destructive">{errors.role.message}</p>
+      )}
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Full name</Label>
-          <Input id="name" value={values.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} />
-          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+          <Input id="name" {...register("name")} />
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name.message}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={values.email}
-            onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
-          />
-          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+          <Input id="email" type="email" {...register("email")} />
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={values.password}
-              onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
-            />
-            {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+            <Input id="password" type="password" {...register("password")} />
+            {errors.password && (
+              <p className="text-xs text-destructive">{errors.password.message}</p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="confirmPassword">Confirm</Label>
             <Input
               id="confirmPassword"
               type="password"
-              value={values.confirmPassword}
-              onChange={(e) => setValues((v) => ({ ...v, confirmPassword: e.target.value }))}
+              {...register("confirmPassword")}
             />
-            {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
         </div>
 
-        {register.isError && <p className="text-sm text-destructive">{(register.error as Error).message}</p>}
+        {register_.isError && (
+          <p className="text-sm text-destructive">
+            {(register_.error as Error).message}
+          </p>
+        )}
 
-        <Button type="submit" className="mt-2" disabled={register.isPending}>
-          {register.isPending ? "Creating account…" : "Create account"}
+        <Button
+          type="submit"
+          className="mt-2"
+          disabled={isSubmitting || register_.isPending}
+        >
+          {register_.isPending ? "Creating account…" : "Create account"}
         </Button>
       </form>
 

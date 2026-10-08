@@ -1,75 +1,55 @@
 "use client";
 
-import { Building2, DoorOpen, ShieldCheck } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { ShieldCheck, Building2, DoorOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { roleHome, useLogin } from "@/hooks/use-auth";
-import { getSafeRedirect } from "@/lib/safe-redirect";
+import { useLogin, roleHome } from "@/hooks/use-auth";
+import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 import { cn } from "@/lib/utils";
-import { loginSchema } from "@/schemas/auth.schema";
 
 const DEMO_ACCOUNTS = [
-  {
-    role: "Admin" as const,
-    email: "testeradmin@gmail.com",
-    password: "Tester@admin12345",
-    icon: ShieldCheck,
-    accent: "text-blueprint",
-  },
-  {
-    role: "Owner" as const,
-    email: "testerowner@gmail.com",
-    password: "Tester@owner12345",
-    icon: Building2,
-    accent: "text-brass",
-  },
-  {
-    role: "Tenant" as const,
-    email: "tester.tenant@gmail.com",
-    password: "Tester@subscribercustomer12345",
-    icon: DoorOpen,
-    accent: "text-moss",
-  },
+  { role: "Admin", email: "testeradmin@gmail.com", password: "Tester@admin12345", icon: ShieldCheck, accent: "text-blueprint" },
+  { role: "Owner", email: "testerowner@gmail.com", password: "Tester@owner12345", icon: Building2, accent: "text-brass" },
+  { role: "Tenant", email: "tester.tenant@gmail.com", password: "Tester@subscribercustomer12345", icon: DoorOpen, accent: "text-moss" },
 ];
 
 export default function LoginPage() {
-  const login = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
+  const login = useLogin();
 
-  const [values, setValues] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const result = loginSchema.safeParse(values);
-    if (!result.success) {
-      setErrors(
-        Object.fromEntries(
-          result.error.issues.map((i) => [i.path[0], i.message]),
-        ),
-      );
-      return;
-    }
-    setErrors({});
-    login.mutate(result.data, {
+  const email = watch("email");
+  const password = watch("password");
+
+  function fillDemo(nextEmail: string, nextPassword: string) {
+    setValue("email", nextEmail, { shouldValidate: true });
+    setValue("password", nextPassword, { shouldValidate: true });
+  }
+
+  function onSubmit(values: LoginFormValues) {
+    login.mutate(values, {
       onSuccess: (session) => {
-        const target =
-          getSafeRedirect(redirectTo, window.location.origin) ??
-          roleHome(session.data.user.role);
+        const target = redirectTo || roleHome(session.data.user.role);
         router.push(target);
       },
     });
-  }
-
-  function fillDemo(email: string, password: string) {
-    setValues({ email, password });
-    setErrors({});
   }
 
   return (
@@ -82,15 +62,15 @@ export default function LoginPage() {
         Enter your details to reach your dashboard.
       </p>
 
+      
       <div className="mt-6 rounded-lg border border-dashed border-border bg-secondary/30 p-3">
         <p className="mb-2 font-mono-plan text-[10px] uppercase tracking-wide text-muted-foreground">
-          Demo accounts
+          Demo accounts · dev only
         </p>
         <div className="grid grid-cols-3 gap-2">
           {DEMO_ACCOUNTS.map((acct) => {
             const Icon = acct.icon;
-            const active =
-              values.email === acct.email && values.password === acct.password;
+            const active = email === acct.email && password === acct.password;
             return (
               <button
                 key={acct.role}
@@ -109,30 +89,25 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
             type="email"
             placeholder="you@example.com"
-            value={values.email}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, email: e.target.value }))
-            }
+            {...register("email")}
           />
           {errors.email && (
-            <p className="text-xs text-destructive">{errors.email}</p>
+            <p className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link
-              href="#"
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">
               Forgot password?
             </Link>
           </div>
@@ -140,13 +115,10 @@ export default function LoginPage() {
             id="password"
             type="password"
             placeholder="••••••••"
-            value={values.password}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, password: e.target.value }))
-            }
+            {...register("password")}
           />
           {errors.password && (
-            <p className="text-xs text-destructive">{errors.password}</p>
+            <p className="text-xs text-destructive">{errors.password.message}</p>
           )}
         </div>
 
@@ -156,17 +128,18 @@ export default function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" className="mt-2" disabled={login.isPending}>
+        <Button
+          type="submit"
+          className="mt-2"
+          disabled={isSubmitting || login.isPending}
+        >
           {login.isPending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New to Roomly?{" "}
-        <Link
-          href="/register"
-          className="font-medium text-foreground hover:underline"
-        >
+        <Link href="/register" className="font-medium text-foreground hover:underline">
           Create an account
         </Link>
       </p>
