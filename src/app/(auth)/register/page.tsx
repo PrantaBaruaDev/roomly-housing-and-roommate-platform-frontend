@@ -27,7 +27,7 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "tenant",
+      role: "TENANT",
     },
   });
 
@@ -50,10 +50,10 @@ export default function RegisterPage() {
       <div className="mt-6 grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => setValue("role", "tenant", { shouldValidate: true })}
+          onClick={() => setValue("role", "TENANT", { shouldValidate: true })}
           className={cn(
             "flex flex-col items-start gap-2 rounded-md border px-4 py-3 text-left transition-colors",
-            role === "tenant" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
+            role === "TENANT" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
           )}
         >
           <DoorOpen className="h-4 w-4" />
@@ -62,10 +62,10 @@ export default function RegisterPage() {
         </button>
         <button
           type="button"
-          onClick={() => setValue("role", "owner", { shouldValidate: true })}
+          onClick={() => setValue("role", "OWNER", { shouldValidate: true })}
           className={cn(
             "flex flex-col items-start gap-2 rounded-md border px-4 py-3 text-left transition-colors",
-            role === "owner" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
+            role === "OWNER" ? "border-primary bg-primary/5" : "border-border hover:bg-secondary",
           )}
         >
           <Building2 className="h-4 w-4" />
