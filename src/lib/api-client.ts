@@ -29,6 +29,12 @@ export const apiClient = ofetch.create({
 
     if (response.status === 401) {
       useAuthStore.getState().clearSession();
+
+      if (typeof window !== "undefined") {
+        const current = window.location.pathname + window.location.search;
+        const loginUrl = `/login?redirect=${encodeURIComponent(current)}`;
+        window.location.href = loginUrl;
+      }
     }
 
     throw new ApiError(message, response.status, response._data);

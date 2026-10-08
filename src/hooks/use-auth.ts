@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth-store";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
 import { ROLE } from "@/lib/constants";
 
-function roleHome(role: string) {
+export function roleHome(role: string) {
   if (role === ROLE.ADMIN) return "/admin";
   if (role === ROLE.OWNER) return "/owner";
   return "/tenant";
@@ -13,14 +13,12 @@ function roleHome(role: string) {
 
 export function useLogin() {
   const setSession = useAuthStore((s) => s.setSession);
-  const router = useRouter();
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: (res) => {
       const session = res.data;
       
       setSession(session.user, session.accessToken);
-      router.push(roleHome(session.user.role));
     },
   });
 }

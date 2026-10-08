@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types/auth";
+import { clearRoleCookie, setRoleCookie } from "@/lib/auth-cookie";
 
 interface AuthState {
   user: User | null;
@@ -14,9 +15,27 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       accessToken: null,
-      setSession: (user, accessToken) => set({ user, accessToken }),
-      clearSession: () => set({ user: null, accessToken: null }),
+      setSession: (user, accessToken) => {
+        set({ user, accessToken });        
+        setRoleCookie(user.role);
+      },
+      clearSession: () => {
+        set({ user: null, accessToken: null });
+        clearRoleCookie();
+      },
     }),
-    { name: "roomly-auth" }
+    { 
+      name: "roomly-auth",
+      
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+      }),
+
+      onRehydrateStorage: () => (state) => {
+        if (state?.user) setRoleCookie(state.user.role);
+      },
+
+    }
   )
 );
