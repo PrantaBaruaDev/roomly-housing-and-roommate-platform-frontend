@@ -9,6 +9,7 @@ import {
   Search,
   CreditCard,
   DoorOpen,
+  KeyRound,
   ShieldCheck,
 } from "lucide-react";
 import type { Role } from "@/lib/constants";
@@ -38,6 +39,7 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
     { label: "Properties", href: "/owner/properties", icon: Building2 },
     { label: "Applications", href: "/owner/applications", icon: ClipboardList },
     { label: "View requests", href: "/owner/view-requests", icon: CalendarClock },
+    { label: "Room occupants", href: "/owner/room-occupants", icon: KeyRound },
     { label: "Invoices", href: "/owner/invoices", icon: Receipt },
   ],
   TENANT: [
