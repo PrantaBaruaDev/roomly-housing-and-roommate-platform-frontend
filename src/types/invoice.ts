@@ -73,11 +73,11 @@ export interface ApiInvoice {
   roomOccupantId: string;
   tenantId: string;
   propertyId: string;
-  billMonth: string;            // "2026-09"
+  billMonth: string;
   type: BackendInvoiceType;
-  rentAmount: string;           // Decimal
-  utilityAmount: string;        // Decimal
-  totalAmount: string;          // Decimal
+  rentAmount: string;
+  utilityAmount: string;
+  totalAmount: string;
   utilityDetails: ApiUtilityDetail[];
   dueDate: string;
   status: BackendBillStatus;
@@ -87,7 +87,7 @@ export interface ApiInvoice {
   tenant: ApiInvoiceTenant;
   property: ApiInvoiceProperty;
   roomOccupant: ApiInvoiceRoomOccupant;
-  payment: ApiInvoicePayment | null;  // present only when paid
+  payment: ApiInvoicePayment | null;
 }
 
 export interface InvoiceLineItemVM {
@@ -102,17 +102,19 @@ export interface InvoiceCardVM {
   statusRaw: BackendBillStatus;
 
   type: BackendInvoiceType;
-  typeLabel: string;            // "Rent + utilities" | "Maintenance fee"
+  typeLabel: string;
 
-  billMonth: string;            // "Sep 2026"
-  dueDate: string;              // formatted
-  createdAt: string;            // formatted
+  billMonth: string;
+  dueDate: string;
+  createdAt: string;
 
   tenantName: string;
   tenantEmail: string;
 
   propertyTitle: string;
   roomNumber: string;
+  bookingMode: "BOOK_BY_ROOM" | "BOOK_BY_SEAT";
+  movedInAt: string | null;
 
   lineItems: InvoiceLineItemVM[];
   rentAmount: number;
@@ -122,4 +124,20 @@ export interface InvoiceCardVM {
   isPaid: boolean;
   paidAt: string | null;
   paymentProvider: BackendPaymentProvider | null;
+
+  payment: InvoicePaymentVM | null;
+}
+
+export interface InvoicePaymentVM {
+  status: BackendPaymentStatus;
+  provider: BackendPaymentProvider;
+  amount: number;
+  paidAt: string;
+  gatewayPaymentId: string | null;
+  gatewayTransactionId: string | null;
+  payerReference: string | null;
+  payerAccount: string | null;
+  isRefunded: boolean;
+  refundAmount: number | null;
+  refundReason: string | null;
 }

@@ -18,7 +18,6 @@ const TYPE_LABEL: Record<BackendInvoiceType, string> = {
 };
 
 function formatBillMonth(ym: string): string {
-  // "2026-09" → "Sep 2026"
   const [year, month] = ym.split("-");
   if (!year || !month) return ym;
   const date = new Date(Number(year), Number(month) - 1, 1);
@@ -28,10 +27,17 @@ function formatBillMonth(ym: string): string {
   }).format(date);
 }
 
+function extractPayerAccount(
+  gatewayResponse: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!gatewayResponse) return null;
+  const acct = gatewayResponse.payerAccount ?? gatewayResponse.customerMsisdn;
+  return typeof acct === "string" ? acct : null;
+}
+
 export function toInvoiceCardVM(inv: ApiInvoice): InvoiceCardVM {
   const utilityDetails = inv.utilityDetails ?? [];
   const rent = Number(inv.rentAmount);
-  const utility = Number(inv.utilityAmount);
 
   const lineItems = [
     { label: "Room rent", amount: rent },
@@ -39,6 +45,7 @@ export function toInvoiceCardVM(inv: ApiInvoice): InvoiceCardVM {
   ];
 
   const payment = inv.payment;
+  const isPaid = inv.status === "PAID" && Boolean(payment);
 
   return {
     id: inv.id,
@@ -58,14 +65,36 @@ export function toInvoiceCardVM(inv: ApiInvoice): InvoiceCardVM {
 
     propertyTitle: inv.property?.title ?? "Unknown property",
     roomNumber: inv.roomOccupant?.room?.roomNumber ?? "—",
+    bookingMode: "BOOK_BY_ROOM",
+    movedInAt: inv.roomOccupant?.movedInAt
+      ? formatDate(inv.roomOccupant.movedInAt)
+      : null,
 
     lineItems,
     rentAmount: rent,
-    utilityAmount: utility,
+    utilityAmount: Number(inv.utilityAmount),
     totalAmount: Number(inv.totalAmount),
 
-    isPaid: inv.status === "PAID" && Boolean(payment),
-    paidAt: payment?.paidAt ? formatDate(payment.paidAt) : null,
+    isPaid,
+    paidAt: isPaid && payment ? formatDate(payment.paidAt) : null,
     paymentProvider: payment?.paymentProvider ?? null,
+
+    payment: payment
+      ? {
+          status: payment.status,
+          provider: payment.paymentProvider,
+          amount: Number(payment.amount),
+          paidAt: formatDate(payment.paidAt),
+          gatewayPaymentId: payment.gatewayPaymentId,
+          gatewayTransactionId: payment.gatewayTransactionId,
+          payerReference: payment.payerReference,
+          payerAccount: extractPayerAccount(payment.gatewayResponse),
+          isRefunded: Boolean(payment.refundedAt),
+          refundAmount: payment.refundAmount
+            ? Number(payment.refundAmount)
+            : null,
+          refundReason: payment.refundReason,
+        }
+      : null,
   };
 }
