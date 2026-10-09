@@ -1,21 +1,41 @@
 "use client";
 
-import { Check, X, ClipboardList } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { ClipboardList } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ApplicationCard } from "@/components/shared/application-card";
-import { Button } from "@/components/ui/button";
-import { useApplications, useUpdateApplication } from "@/hooks/use-applications";
-import { toApplicationCardVM } from "@/lib/adapters/application";
 import { DataPagination } from "@/components/shared/data-pagination";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApplications } from "@/hooks/use-applications";
+import { toApplicationCardVM } from "@/lib/adapters/application";
+import type { BackendApplicationStatus } from "@/types/application";
 
+type Filter = "ALL" | BackendApplicationStatus;
+
+const TABS: { value: Filter; label: string }[] = [
+  { value: "ALL", label: "All" },
+  { value: "PENDING", label: "Pending" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "REJECTED", label: "Rejected" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
 
 export default function OwnerApplicationsPage() {
+  const [tab, setTab] = useState<Filter>("ALL");
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError, error } = useApplications({ page });
-  const update = useUpdateApplication();
+
+  const { data, isLoading, isError } = useApplications(
+    tab === "ALL" ? { page } : { status: tab, page },
+  );
   const applications = (data?.data ?? []).map(toApplicationCardVM);
+
+  function changeTab(next: Filter) {
+    setTab(next);
+    setPage(1);
+  }
 
   return (
     <div>
@@ -24,56 +44,65 @@ export default function OwnerApplicationsPage() {
         description="Review requests to rent a room in your properties."
       />
 
-      {isLoading && (
+      <Tabs value={tab} onValueChange={(v) => changeTab(v as Filter)}>
+        <TabsList>
+          {TABS.map((t) => (
+            <TabsTrigger key={t.value} value={t.value}>
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      {isLoading && !data && (
         <p className="py-16 text-center text-sm text-muted-foreground">
           Loading applications…
         </p>
       )}
 
-      {!isLoading && applications.length === 0 && (
+      {isError && (
+        <p className="py-16 text-center text-sm text-destructive">
+          Failed to load applications.
+        </p>
+      )}
+
+      {!isLoading && !isError && applications.length === 0 && (
         <EmptyState
           icon={ClipboardList}
-          title="No applications yet"
-          description="Applications from tenants will appear here for review."
+          title="No applications"
+          description={
+            tab === "ALL"
+              ? "Applications from tenants will appear here."
+              : "Nothing matches this filter."
+          }
         />
       )}
 
-      {!isLoading && applications.length > 0 && (
-        <div className="flex flex-col gap-4">
-          {applications.map((app) => (
-            <ApplicationCard
-              key={app.id}
-              app={app}
-              actions={
-                app.status === "PENDING" ? (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={update.isPending}
-                      onClick={() =>
-                        update.mutate({ id: app.id, decision: "REJECTED" } as any)
-                      }
-                    >
-                      <X className="h-4 w-4" /> Decline
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={update.isPending}
-                      onClick={() =>
-                        update.mutate({ id: app.id, decision: "APPROVED" } as any)
-                      }
-                    >
-                      <Check className="h-4 w-4" /> Accept
-                    </Button>
-                  </>
-                ) : null
-              }
-            />
-          ))}
-        </div>
+      {applications.length > 0 && (
+        <>
+          <div className="mt-4 flex flex-col gap-4">
+            {applications.map((app) => (
+              <ApplicationCard
+                key={app.id}
+                app={app}
+                actions={
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/owner/applications/${app.id}`}>
+                      Review
+                    </Link>
+                  </Button>
+                }
+              />
+            ))}
+          </div>
+
+          <DataPagination
+            meta={data?.meta}
+            currentPage={page}
+            onPageChange={setPage}
+          />
+        </>
       )}
-      <DataPagination meta={data?.meta} onPageChange={setPage} />
     </div>
   );
 }
