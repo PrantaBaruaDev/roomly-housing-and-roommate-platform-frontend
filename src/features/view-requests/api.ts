@@ -23,11 +23,9 @@ export const viewRequestsApi = {
     roomId?: string;
     page?: number;
     limit?: number;
-  }) =>
-    apiClient<PaginatedResponse<ApiViewRequest>>(BASE, { params }),
+  }) => apiClient<PaginatedResponse<ApiViewRequest>>(BASE, { params }),
 
-  get: (id: string) =>
-    apiClient<SingleResponse<ApiViewRequest>>(`${BASE}/${id}`).then((r) => r.data),
+  get: (id: string) => apiClient<SingleResponse<ApiViewRequest>>(`${BASE}/${id}`).then((r) => r.data),
 
   create: (payload: ViewRequestFormValues) =>
     apiClient<SingleResponse<ApiViewRequest>>(BASE, {

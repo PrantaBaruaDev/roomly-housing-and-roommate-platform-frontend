@@ -20,6 +20,14 @@ export function useViewRequests(params?: {
   });
 }
 
+export function useViewRequest(id: string) {
+  return useQuery({
+    queryKey: ["view-requests", "detail", id],
+    queryFn: () => viewRequestsApi.get(id),
+    enabled: Boolean(id),
+  });
+}
+
 export function useCreateViewRequest() {
   const queryClient = useQueryClient();
   return useMutation({

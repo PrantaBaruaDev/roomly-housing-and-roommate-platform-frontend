@@ -10,6 +10,7 @@ import {
   useUpdateViewRequest,
 } from "@/hooks/use-view-requests";
 import { toViewRequestCardVM } from "@/lib/adapters/view-request";
+import Link from "next/link";
 
 export default function TenantViewRequestsPage() {
   const { data, isLoading, isError, error } = useViewRequests();
@@ -51,29 +52,9 @@ export default function TenantViewRequestsPage() {
               request={r}
               viewerRole="tenant"
               actions={
-                r.status === "countered" ? (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={update.isPending}
-                      onClick={() =>
-                        update.mutate({ id: r.id, status: "REJECTED" })
-                      }
-                    >
-                      Decline
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={update.isPending}
-                      onClick={() =>
-                        update.mutate({ id: r.id, status: "APPROVED" })
-                      }
-                    >
-                      Accept new time
-                    </Button>
-                  </>
-                ) : null
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/tenant/view-requests/${r.id}`}>View details</Link>
+                </Button>
               }
             />
           ))}
