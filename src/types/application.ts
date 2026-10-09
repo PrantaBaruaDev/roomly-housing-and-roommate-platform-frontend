@@ -75,6 +75,8 @@ export interface ApiApplication {
   tenant: ApiApplicationTenant;
   room: ApiApplicationRoom;
   payments: ApiApplicationPayment[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApplicationCardVM {
@@ -100,4 +102,49 @@ export interface ApplicationCardVM {
   paidAt: string | null;
   paymentProvider: BackendPaymentProvider | null;
   lastPaymentStatus: BackendPaymentStatus | null;
+}
+
+export interface ApplicationDetailVM {
+  id: string;
+  status: BackendApplicationStatus;
+  statusKey: "PENDING" | "ACCEPTED" | "REJECTED" | "WITHDRAWN";
+
+  /* Tenant */
+  tenantId: string;
+  tenantName: string;
+  tenantEmail: string;
+
+  /* Owner */
+  ownerId: string;
+  ownerName: string;
+  ownerEmail: string;
+
+  /* Property + room */
+  propertyId: string;
+  propertyTitle: string;
+  propertyLocation: string;
+  roomId: string;
+  roomNumber: string;
+  roomRent: number;
+  bookingMode: "BOOK_BY_ROOM" | "BOOK_BY_SEAT";
+  maxCapacity: number;
+
+  /* Application */
+  moveInDate: string;
+  isPrivateLease: boolean;
+  agreedRent: number;
+  ownerFeedback: string | null;
+  createdAt: string;
+  updatedAt: string;
+
+  /* Payments */
+  payments: {
+    id: string;
+    amount: number;
+    status: string;
+    paidAt: string | null;
+    provider: string;
+  }[];
+  hasCompletedPayment: boolean;
+  completedPaymentId: string | null;
 }

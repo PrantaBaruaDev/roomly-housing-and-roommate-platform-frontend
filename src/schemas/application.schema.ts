@@ -1,18 +1,31 @@
 import { z } from "zod";
 
-export const applicationSchema = z.object({
-  roomId: z.string().min(1),
+export const applicationCreateSchema = z.object({
+  roomId: z.string().min(1, "Room is required"),
   moveInDate: z.string().min(1, "Choose a move-in date"),
-  message: z.string().max(500, "Keep it under 500 characters").optional(),
+  isPrivateLease: z.boolean().default(false),
+  agreedRentAmount: z.coerce
+    .number({ required_error: "Rent must be a number" })
+    .positive("Rent must be greater than 0"),
 });
-export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-export const applicationReviewSchema = z.object({
-  applicationId: z.string().min(1),
-  decision: z.enum(["accepted", "rejected"]),
-  reviewNote: z.string().max(500).optional(),
+export type ApplicationCreateValues = z.infer<typeof applicationCreateSchema>;
+
+export const applicationUpdateSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED", "CANCELLED"]),
+  ownerFeedback: z
+    .string()
+    .max(500, "Keep it under 500 characters")
+    .optional(),
 });
-export type ApplicationReviewValues = z.infer<typeof applicationReviewSchema>;
+
+export type ApplicationUpdateValues = z.infer<typeof applicationUpdateSchema>;
+
+export const applicationSchema = applicationCreateSchema;
+export type ApplicationFormValues = ApplicationCreateValues;
+
+export const applicationReviewSchema = applicationUpdateSchema;
+export type ApplicationReviewValues = ApplicationUpdateValues;
 
 export const viewRequestSchema = z.object({
   roomId: z.string().min(1),

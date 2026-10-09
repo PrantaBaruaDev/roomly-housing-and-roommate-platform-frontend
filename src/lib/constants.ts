@@ -22,7 +22,6 @@ export type ViewRequestStatus = (typeof VIEW_REQUEST_STATUS)[number];
 export const ROOM_STATUS = ["available", "reserved", "occupied", "maintenance"] as const;
 export type RoomStatus = (typeof ROOM_STATUS)[number];
 
-/** Single source of truth for status -> label/color so badges stay consistent everywhere. */
 export const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-amber/10 text-amber border-amber/30" },
   requested: { label: "Requested", className: "bg-amber/10 text-amber border-amber/30" },
@@ -30,6 +29,7 @@ export const STATUS_STYLES: Record<string, { label: string; className: string }>
   draft: { label: "Draft", className: "bg-muted text-muted-foreground border-border" },
   accepted: { label: "Accepted", className: "bg-moss/10 text-moss border-moss/30" },
   confirmed: { label: "Confirmed", className: "bg-moss/10 text-moss border-moss/30" },
+  cancelled: { label: "Cancelled", className: "bg-muted text-muted-foreground border-border" },
   paid: { label: "Paid", className: "bg-moss/10 text-moss border-moss/30" },
   issued: { label: "Issued", className: "bg-blueprint/10 text-blueprint border-blueprint/30" },
   completed: { label: "Completed", className: "bg-blueprint/10 text-blueprint border-blueprint/30" },

@@ -21,8 +21,8 @@ export function CopyableId({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard API blocked (http on non-localhost, or permission denied)
-      // Fall back to select-the-text — user copies manually.
+      // Clipboard API blocked 
+      // user copies manually.
     }
   }
 

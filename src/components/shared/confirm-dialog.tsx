@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,19 +17,25 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   variant = "destructive",
+  mode = "confirm",
   isPending,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: React.ReactNode;
   confirmLabel?: string;
+  cancelLabel?: string;
   variant?: "destructive" | "default";
+  mode?: "confirm" | "alert";
   isPending?: boolean;
-  onConfirm: () => void;
+  onConfirm?: () => void;
 }) {
+  const isAlert = mode === "alert";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
@@ -40,7 +46,9 @@ export function ConfirmDialog({
                 "flex h-7 w-7 items-center justify-center rounded-md",
                 variant === "destructive"
                   ? "bg-destructive/10 text-destructive"
-                  : "bg-primary/10 text-primary",
+                  : variant === "default"
+                    ? "bg-amber/10 text-amber"
+                    : "bg-primary/10 text-primary",
               )}
             >
               <AlertTriangle className="h-4 w-4" />
@@ -49,23 +57,35 @@ export function ConfirmDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <div className="text-sm text-muted-foreground">{description}</div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant={variant === "destructive" ? "destructive" : "default"}
-            onClick={onConfirm}
-            disabled={isPending}
-          >
-            {isPending ? "Working…" : confirmLabel}
-          </Button>
+          {isAlert ? (
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              <X className="mr-1 h-3 w-3" /> Close
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+              >
+                {cancelLabel}
+              </Button>
+              <Button
+                variant={variant === "destructive" ? "destructive" : "default"}
+                onClick={onConfirm}
+                disabled={isPending}
+              >
+                {isPending ? "Working…" : confirmLabel}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

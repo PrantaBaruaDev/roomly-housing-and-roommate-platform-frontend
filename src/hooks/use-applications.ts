@@ -1,8 +1,21 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+"use client";
+
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { applicationsApi } from "@/features/applications/api";
 import { queryKeys } from "./query-keys";
-import type { ApiApplication, BackendApplicationStatus } from "@/types/application";
-import type { ApplicationReviewValues } from "@/schemas/application.schema";
+import type {
+  ApiApplication,
+  BackendApplicationStatus,
+} from "@/types/application";
+import type {
+  ApplicationCreateValues,
+  ApplicationUpdateValues,
+} from "@/schemas/application.schema";
 
 export function useApplications(params?: {
   status?: BackendApplicationStatus;
@@ -25,26 +38,41 @@ export function useApplication(id: string) {
   });
 }
 
-export function useUpdateApplication() {
-  const queryClient = useQueryClient();
+export function useSubmitApplication() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      ...payload
-    }: { id: string } & Partial<ApplicationReviewValues>) =>
-      applicationsApi.update(id, payload),
+    mutationFn: (payload: ApplicationCreateValues) =>
+      applicationsApi.submit(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+      qc.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
   });
 }
 
+export function useUpdateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: string } & ApplicationUpdateValues) =>
+      applicationsApi.update(id, payload),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: queryKeys.applications.all });
+      qc.invalidateQueries({
+        queryKey: queryKeys.applications.detail(variables.id),
+      });
+    },
+  });
+}
+
+export function useWithdrawApplication() {
+  return useUpdateApplication();
+}
+
 export function useDeleteApplication() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => applicationsApi.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+      qc.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
   });
 }
