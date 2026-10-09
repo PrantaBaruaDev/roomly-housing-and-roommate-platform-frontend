@@ -104,7 +104,7 @@ export function InvoiceDetail({
         </Card>
       </div>
 
-      {invoice.payment && (
+      {invoice.payment && invoice.payment?.gatewayTransactionId && invoice.payment?.status === "COMPLETED" && invoice.status === "paid" && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
