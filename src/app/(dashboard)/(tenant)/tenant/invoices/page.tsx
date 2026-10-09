@@ -7,6 +7,8 @@ import { InvoiceCardList } from "@/components/shared/invoice-card";
 import { Button } from "@/components/ui/button";
 import { useInvoices } from "@/hooks/use-invoices";
 import { toInvoiceCardVM } from "@/lib/adapters/invoice";
+import Link from "next/link";
+import { formatCurrency } from "@/lib/utils";
 
 export default function TenantInvoicesPage() {
   const { data, isLoading, isError, error } = useInvoices();
@@ -43,11 +45,15 @@ export default function TenantInvoicesPage() {
         <InvoiceCardList
           invoices={invoices}
           viewerRole="tenant"
-          renderActions={(inv) =>
-            inv.status === "issued" ? (
-              <Button size="sm">Pay {`$${inv.totalAmount}`}</Button>
-            ) : null
-          }
+          renderActions={(inv) => (
+            <Button asChild size="sm">
+              <Link href={`/tenant/invoices/${inv.id}`}>
+                {inv.status === "issued"
+                  ? `View & Pay ${formatCurrency(inv.totalAmount)}`
+                  : "View invoice"}
+              </Link>
+            </Button>
+          )}
         />
       )}
     </div>

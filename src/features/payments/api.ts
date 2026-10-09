@@ -1,12 +1,55 @@
-import { apiClient, type PaginatedResponse } from "@/lib/api-client";
-import type { Payment } from "@/types/payment";
+import {
+  apiClient,
+  type SingleResponse,
+} from "@/lib/api-client";
+import type {
+  ApiPayment,
+  CreateBkashResponse,
+  NestedPaginatedResponse,
+} from "@/types/payment";
+
+const BASE = "/payments";
+
+export interface PaymentListResponse {
+  success: boolean;
+  message: string;
+  data: ApiPayment[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const paymentsApi = {
-  list: (params?: { tenantId?: string; roomId?: string; status?: string; page?: number }) =>
-    apiClient<PaginatedResponse<Payment>>("/payments", { params }),
-  get: (id: string) => apiClient<Payment>(`/payments/${id}`),
-  initiate: (payload: { applicationId: string; method: Payment["method"] }) =>
-    apiClient<{ redirectUrl: string; paymentId: string }>("/payments/initiate", { method: "POST", body: payload }),
-  payInvoice: (payload: { invoiceId: string; method: Payment["method"] }) =>
-    apiClient<{ redirectUrl: string; paymentId: string }>("/payments/invoice", { method: "POST", body: payload }),
+
+  list: async (params?: { page?: number; limit?: number }): Promise<PaymentListResponse> => {
+    const res = await apiClient<NestedPaginatedResponse<ApiPayment>>(BASE, {
+      params,
+    });
+
+    return {
+      success: res.success,
+      message: res.message,
+      data: res.data?.data ?? [],
+      meta: {
+        page: res.data?.meta?.page ?? 1,
+        limit: res.data?.meta?.limit ?? 10,
+        total: res.data?.meta?.total ?? 0,
+        totalPages:
+          res.data?.meta?.totalPages ??
+          res.data?.meta?.totalPage ??
+          1,
+      },
+    };
+  },
+
+  get: (id: string) => apiClient<SingleResponse<ApiPayment>>(`${BASE}/${id}`).then((r) => r.data),
+
+  createBkash: (payload: { applicationId: string } | { invoiceId: string }) =>
+    apiClient<SingleResponse<CreateBkashResponse>>(`${BASE}/create/bkash`, {
+      method: "POST",
+      body: payload,
+    }).then((r) => r.data),
 };
