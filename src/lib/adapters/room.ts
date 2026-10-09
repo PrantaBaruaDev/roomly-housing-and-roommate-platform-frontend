@@ -3,7 +3,9 @@ import type {
   ApiRoom,
   FlatSectionVM,
   RoomCardVM,
+  RoomBrowseVM
 } from "@/types/room";
+
 
 function toRoomCardVM(r: ApiRoom): RoomCardVM {
   const max = Math.max(0, r.maxCapacity);
@@ -51,4 +53,54 @@ export function toFlatSectionVMs(
       };
     })
     .sort((a, b) => a.floorNumber - b.floorNumber);
+}
+
+export function toRoomBrowseVMs(
+  properties: ApiPropertyWithInventory[],
+): RoomBrowseVM[] {
+  const out: RoomBrowseVM[] = [];
+
+  for (const property of properties) {
+    const rooms = (property.rooms ?? []).filter((r) => !r.isDeleted);
+    const flatsById = new Map(
+      (property.flats ?? []).filter((f) => !f.isDeleted).map((f) => [f.id, f]),
+    );
+
+    for (const room of rooms) {
+      if (!flatsById.has(room.flatId)) continue;
+
+      out.push({
+        id: room.id,
+        propertyId: property.id,
+        flatId: room.flatId,
+
+        roomNumber: room.roomNumber,
+        rent: Number(room.rentAmount),
+        bookingMode: room.bookingMode,
+        maxCapacity: room.maxCapacity,
+        availableCapacity: room.availableCapacity,
+        isAvailable: room.isAvailable,
+
+        propertyTitle: property.title,
+        propertyAddress: property.address,
+        propertyCity: property.city,
+        propertyType: property.propertyType,
+        amenities: property.amenities ?? [],
+        isVerified: property.isVerified,
+        imageUrl: property.propertyImage,
+
+        searchBlob: [
+          room.roomNumber,
+          property.title,
+          property.address,
+          property.city,
+          ...(property.amenities ?? []),
+        ]
+          .join(" ")
+          .toLowerCase(),
+      });
+    }
+  }
+
+  return out.sort((a, b) => a.rent - b.rent);
 }

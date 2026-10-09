@@ -23,8 +23,6 @@ export interface NavItem {
 export const PUBLIC_NAVBAR = [
   { label: "Home", href: "/" },
   { label: "Browse rooms", href: "/browse" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
 ];
 
 export const NAV_CONFIG: Record<Role, NavItem[]> = {
@@ -44,7 +42,6 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
   ],
   TENANT: [
     { label: "Overview", href: "/tenant", icon: LayoutGrid },
-    { label: "Browse rooms", href: "/tenant/browse", icon: Search },
     { label: "My applications", href: "/tenant/applications", icon: ShoppingBag },
     { label: "View requests", href: "/tenant/view-requests", icon: CalendarClock },
     { label: "Payments", href: "/tenant/payments", icon: CreditCard },

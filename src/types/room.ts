@@ -55,3 +55,26 @@ export interface FlatSectionVM {
   roomCount: number;
   availableRoomCount: number;
 }
+
+export interface RoomBrowseVM {
+  id: string;
+  propertyId: string;
+  flatId: string;
+
+  roomNumber: string;
+  rent: number;
+  bookingMode: BackendBookingMode;
+  maxCapacity: number;
+  availableCapacity: number;
+  isAvailable: boolean;
+
+  propertyTitle: string;
+  propertyAddress: string;
+  propertyCity: string;
+  propertyType: "RESIDENTIAL" | "COMMERCIAL" | "MIXED";
+  amenities: string[];
+  isVerified: boolean;
+  imageUrl: string | null;
+
+  searchBlob: string;
+}
