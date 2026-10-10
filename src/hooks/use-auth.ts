@@ -5,17 +5,11 @@ import { useAuthStore } from "@/store/auth-store";
 import type { LoginPayload, RegisterPayload, User } from "@/types/auth";
 import { ROLE } from "@/lib/constants";
 
-function normalizeUser(user: User): User {
-  return {
-    ...user,
-    role: user.role.toLowerCase() as User["role"],
-  };
-}
-
 export function roleHome(role: string) {
   if (role === ROLE.ADMIN) return "/admin";
   if (role === ROLE.OWNER) return "/owner";
-  return "/tenant";
+  if (role === ROLE.TENANT) return "/tenant";
+  return "/login";
 }
 
 export function useLogin() {
@@ -23,7 +17,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: (session) => {     
-      setSession(normalizeUser(session.user), session.accessToken);
+      setSession(session.user, session.accessToken);
     },
   });
 }
@@ -34,7 +28,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
     onSuccess: (session) => {
-      setSession(normalizeUser(session.user), session.accessToken);
+      setSession(session.user, session.accessToken);
       router.push(roleHome(session.user.role));
     },
   });

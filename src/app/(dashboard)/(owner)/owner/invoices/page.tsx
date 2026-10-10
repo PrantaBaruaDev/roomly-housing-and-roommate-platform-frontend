@@ -61,7 +61,7 @@ export default function OwnerInvoicesPage() {
       billMonth: "",
       dueDate: "",
       type: "COMBINED_RENT_UTILITY",
-      rentAmount: 0,
+      rentAmount: Number(0),
       utilityDetails: [DEFAULT_UTILITY],
     },
   });

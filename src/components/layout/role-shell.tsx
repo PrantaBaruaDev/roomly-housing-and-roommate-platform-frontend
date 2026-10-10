@@ -9,12 +9,6 @@ import { authApi } from "@/features/auth/api";
 import type { Role } from "@/lib/constants";
 import type { User } from "@/types/auth";
 
-function normalizeUser(user: User): User {
-  return {
-    ...user,
-    role: String(user.role).toLowerCase() as User["role"],
-  };
-}
 
 function readAccessCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -60,7 +54,7 @@ export function RoleShell({
     if (!data) return;
     
     const token = readAccessCookie();
-    setSession(normalizeUser(data), token ?? "");
+    setSession(data, token ?? "");
     
   }, [data, setSession]);
 

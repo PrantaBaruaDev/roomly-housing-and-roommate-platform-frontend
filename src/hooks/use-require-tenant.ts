@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
+import { ROLE } from '@/lib/constants';
 
 export type AuthGateResult =
   | { ok: true }
@@ -19,7 +20,7 @@ export function useRequireTenant() {
       return { ok: false, reason: "login" };
     }
 
-    if (user.role !== "TENANT") {
+    if (user.role !== ROLE.TENANT) {
       return { ok: false, reason: "wrong-role" };
     }
 
