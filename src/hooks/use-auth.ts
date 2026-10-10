@@ -22,9 +22,7 @@ export function useLogin() {
   const setSession = useAuthStore((s) => s.setSession);
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
-    onSuccess: (res) => {
-      const session = res.data;
-      
+    onSuccess: (session) => {     
       setSession(normalizeUser(session.user), session.accessToken);
     },
   });
@@ -35,9 +33,7 @@ export function useRegister() {
   const router = useRouter();
   return useMutation({
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
-    onSuccess: (res) => {
-      const session = res.data;
-
+    onSuccess: (session) => {
       setSession(normalizeUser(session.user), session.accessToken);
       router.push(roleHome(session.user.role));
     },
