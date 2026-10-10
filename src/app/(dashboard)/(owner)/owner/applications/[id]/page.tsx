@@ -13,12 +13,12 @@ import {
   Check,
   X,
   Ban,
+  MessageSquare,
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CopyableId } from "@/components/shared/copyable-id";
 import { useApplication, useUpdateApplication } from "@/hooks/use-applications";
 import { toApplicationDetailVM } from "@/lib/adapters/application";
 import { formatCurrency } from "@/lib/utils";
@@ -36,22 +37,25 @@ type Decision = ApplicationUpdateValues["status"];
 
 const DECISION_META: Record<
   Decision,
-  { title: string; confirmLabel: string; requiresFeedback: boolean }
+  { title: string; confirmLabel: string; hint: string; variant: "default" | "destructive" }
 > = {
   APPROVED: {
     title: "Approve application",
     confirmLabel: "Approve",
-    requiresFeedback: false,
+    hint: "The tenant will be able to pay and confirm.",
+    variant: "default",
   },
   REJECTED: {
     title: "Reject application",
     confirmLabel: "Reject",
-    requiresFeedback: true,
+    hint: "The tenant will be notified. Feedback is recommended.",
+    variant: "destructive",
   },
   CANCELLED: {
     title: "Cancel application",
     confirmLabel: "Cancel application",
-    requiresFeedback: false,
+    hint: "Use this if the room is no longer available.",
+    variant: "destructive",
   },
 };
 
@@ -109,13 +113,20 @@ export default function OwnerApplicationDetailPage({
       )}
 
       {isError && (
-        <p className="py-16 text-center text-sm text-destructive">
-          {err?.status === 403
-            ? "You don't have access to this application."
-            : err?.status === 404
-              ? "Application not found."
-              : err?.message ?? "Failed to load application."}
-        </p>
+        <Card className="mx-auto max-w-md">
+          <CardContent className="p-8 text-center">
+            <p className="text-sm font-medium">
+              {err?.status === 403
+                ? "You don't have access to this application"
+                : err?.status === 404
+                  ? "Application not found"
+                  : "Couldn't load this application"}
+            </p>
+            <Button asChild size="sm" className="mt-4">
+              <Link href="/owner/applications">Back to applications</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {app && (
@@ -126,11 +137,16 @@ export default function OwnerApplicationDetailPage({
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {/* Left */}
+            {/* Left column */}
             <div className="flex flex-col gap-4 lg:col-span-2">
+              {/* Status + amount hero */}
               <Card>
                 <CardContent className="flex items-center justify-between p-5">
                   <div>
+                    <div className="mt-2 flex flex-col gap-2 border-t border-border pt-4">
+                      <CopyableId id={app.id} label="Application ID:" />
+                    </div>
+
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
                       Status
                     </p>
@@ -145,10 +161,15 @@ export default function OwnerApplicationDetailPage({
                     <p className="mt-1 font-display text-2xl leading-none tabular-nums">
                       {formatCurrency(app.agreedRent)}
                     </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      per{" "}
+                      {app.bookingMode === "BOOK_BY_SEAT" ? "seat" : "month"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Room + property */}
               <Card>
                 <CardHeader>
                   <CardTitle>Room &amp; property</CardTitle>
@@ -168,10 +189,17 @@ export default function OwnerApplicationDetailPage({
                     icon={DoorOpen}
                     label="Room"
                     value={app.roomNumber}
+                    sub={`Max capacity ${app.maxCapacity}`}
+                  />
+                  <InfoRow
+                    icon={Wallet}
+                    label="Listed rent"
+                    value={formatCurrency(app.roomRent)}
                   />
                 </CardContent>
               </Card>
 
+              {/* Terms */}
               <Card>
                 <CardHeader>
                   <CardTitle>Application terms</CardTitle>
@@ -194,10 +222,28 @@ export default function OwnerApplicationDetailPage({
                   />
                 </CardContent>
               </Card>
+
+              {/* Owner feedback — shown after a decision */}
+              {app.ownerFeedback && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      Your feedback
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="whitespace-pre-wrap text-sm">
+                      {app.ownerFeedback}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
-            {/* Right */}
+            {/* Right column */}
             <div className="flex flex-col gap-4">
+              {/* Tenant */}
               <Card>
                 <CardHeader>
                   <CardTitle>Tenant</CardTitle>
@@ -212,7 +258,7 @@ export default function OwnerApplicationDetailPage({
                 </CardContent>
               </Card>
 
-              {/* Owner decisions */}
+              {/* Actions — visible only for PENDING */}
               <Card>
                 <CardHeader>
                   <CardTitle>Actions</CardTitle>
@@ -226,7 +272,7 @@ export default function OwnerApplicationDetailPage({
                         onClick={() => openDecision("APPROVED")}
                         disabled={update.isPending}
                       >
-                        <Check className="mr-2 h-4 w-4" /> Approve
+                        <Check className="mr-2 h-4 w-4" /> Approve application
                       </Button>
                       <Button
                         size="sm"
@@ -235,11 +281,11 @@ export default function OwnerApplicationDetailPage({
                         onClick={() => openDecision("REJECTED")}
                         disabled={update.isPending}
                       >
-                        <X className="mr-2 h-4 w-4" /> Reject
+                        <X className="mr-2 h-4 w-4" /> Reject application
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         className="justify-start"
                         onClick={() => openDecision("CANCELLED")}
                         disabled={update.isPending}
@@ -248,13 +294,30 @@ export default function OwnerApplicationDetailPage({
                       </Button>
                     </>
                   ) : (
-                    <p className="text-xs text-muted-foreground">
-                      This application is already{" "}
+                    <div className="rounded-md border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+                      This application is{" "}
                       <span className="font-medium text-foreground">
                         {app.statusKey}
                       </span>
-                      . No further actions are available.
-                    </p>
+                      . No further actions available.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* References */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>References</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2.5 text-xs">
+                  <CopyableId id={app.id} label="Application" />
+                  {app.roomId && <CopyableId id={app.roomId} label="Room" />}
+                  {app.propertyId && (
+                    <CopyableId id={app.propertyId} label="Property" />
+                  )}
+                  {app.tenantId && (
+                    <CopyableId id={app.tenantId} label="Tenant" />
                   )}
                 </CardContent>
               </Card>
@@ -275,17 +338,23 @@ export default function OwnerApplicationDetailPage({
 
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-muted-foreground">
-                  Applying to <strong className="text-foreground">{app.roomNumber}</strong>{" "}
-                  in <strong className="text-foreground">{app.propertyTitle}</strong> by{" "}
-                  <strong className="text-foreground">{app.tenantName}</strong>.
+                  {decisionMeta?.hint}
+                </p>
+                <p className="text-sm">
+                  Tenant{" "}
+                  <strong className="text-foreground">{app.tenantName}</strong>{" "}
+                  applied to{" "}
+                  <strong className="text-foreground">{app.roomNumber}</strong>{" "}
+                  in{" "}
+                  <strong className="text-foreground">
+                    {app.propertyTitle}
+                  </strong>
+                  .
                 </p>
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="feedback">
-                    Feedback{" "}
-                    {decisionMeta?.requiresFeedback
-                      ? "(recommended)"
-                      : "(optional)"}
+                    Feedback {decision === "REJECTED" ? "(recommended)" : "(optional)"}
                   </Label>
                   <textarea
                     id="feedback"
@@ -294,7 +363,7 @@ export default function OwnerApplicationDetailPage({
                       decision === "APPROVED"
                         ? "Welcome aboard! Move-in details to follow…"
                         : decision === "REJECTED"
-                          ? "Sorry, but this room has been booked."
+                          ? "Sorry, this room has been taken."
                           : "Reason for cancelling…"
                     }
                     value={feedback}
@@ -320,11 +389,7 @@ export default function OwnerApplicationDetailPage({
                   Cancel
                 </Button>
                 <Button
-                  variant={
-                    decision === "REJECTED" || decision === "CANCELLED"
-                      ? "destructive"
-                      : "default"
-                  }
+                  variant={decisionMeta?.variant}
                   onClick={submitDecision}
                   disabled={update.isPending}
                 >

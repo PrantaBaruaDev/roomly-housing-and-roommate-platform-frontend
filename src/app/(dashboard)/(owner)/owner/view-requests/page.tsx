@@ -22,6 +22,7 @@ import {
 } from "@/hooks/use-view-requests";
 import { toViewRequestCardVM } from "@/lib/adapters/view-request";
 import { DataPagination } from "@/components/shared/data-pagination";
+import Link from "next/link";
 
 export default function OwnerViewRequestsPage() {
   const [page, setPage] = useState(1);
@@ -87,65 +88,9 @@ export default function OwnerViewRequestsPage() {
               request={r}
               viewerRole="owner"
               actions={
-                r.status === "requested" ? (
-                  <>
-                    <Dialog
-                      open={counterFor === r.id}
-                      onOpenChange={(open) =>
-                        setCounterFor(open ? r.id : null)
-                      }
-                    >
-                      <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" disabled={update.isPending}>
-                          Reschedule
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Propose a new time</DialogTitle>
-                        </DialogHeader>
-                        <div className="flex flex-col gap-3">
-                          <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="counterDate">New date & time</Label>
-                            <Input
-                              id="counterDate"
-                              type="datetime-local"
-                              value={counterDate}
-                              onChange={(e) => setCounterDate(e.target.value)}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="counterNote">Note (optional)</Label>
-                            <Input
-                              id="counterNote"
-                              value={counterNote}
-                              onChange={(e) => setCounterNote(e.target.value)}
-                              placeholder="Why are you rescheduling?"
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            disabled={!counterDate || update.isPending}
-                            onClick={() => submitCounter(r.id)}
-                          >
-                            Send counter-offer
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Button
-                      size="sm"
-                      disabled={update.isPending}
-                      onClick={() =>
-                        update.mutate({ id: r.id, status: "APPROVED" })
-                      }
-                    >
-                      Confirm
-                    </Button>
-                  </>
-                ) : null
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/owner/view-requests/${r.id}`}>Review</Link>
+                </Button>
               }
             />
           ))}
