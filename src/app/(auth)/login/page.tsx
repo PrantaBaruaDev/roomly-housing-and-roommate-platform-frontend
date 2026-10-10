@@ -34,12 +34,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!hydrated || !user) return;
-    const home =
-      user.role === "ADMIN"
+    const home = user.role === "ADMIN"
         ? "/admin"
         : user.role === "OWNER"
-          ? "/OWNER"
-          : "/tenant";
+          ? "/owner"
+          : user.role === "TENANT" 
+            ? "/tenant" 
+            : "/";
+
     if (window.location.pathname !== home) {
       router.replace(home);
     }
@@ -67,7 +69,7 @@ export default function LoginPage() {
   function onSubmit(values: LoginFormValues) {
     login.mutate(values, {
       onSuccess: (session) => {
-        const target = redirectTo || roleHome(session.data.user.role);
+        const target = redirectTo || roleHome(session.user.role);
         router.push(target);
       },
     });
