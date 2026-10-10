@@ -28,7 +28,6 @@ export function RoleShell({
   const setSession = useAuthStore((s) => s.setSession);
   const clearSession = useAuthStore((s) => s.clearSession);
 
-
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -58,7 +57,7 @@ export function RoleShell({
   }, [data, setSession]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || user) return;
     if (isError) {
       clearSession();
       router.replace("/login");
