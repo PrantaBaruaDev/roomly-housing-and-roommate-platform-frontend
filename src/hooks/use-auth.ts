@@ -2,8 +2,15 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/features/auth/api";
 import { useAuthStore } from "@/store/auth-store";
-import type { LoginPayload, RegisterPayload } from "@/types/auth";
+import type { LoginPayload, RegisterPayload, User } from "@/types/auth";
 import { ROLE } from "@/lib/constants";
+
+function normalizeUser(user: User): User {
+  return {
+    ...user,
+    role: user.role.toLowerCase() as User["role"],
+  };
+}
 
 export function roleHome(role: string) {
   if (role === ROLE.ADMIN) return "/admin";
@@ -18,7 +25,7 @@ export function useLogin() {
     onSuccess: (res) => {
       const session = res.data;
       
-      setSession(session.user, session.accessToken);
+      setSession(normalizeUser(session.user), session.accessToken);
     },
   });
 }
@@ -31,7 +38,7 @@ export function useRegister() {
     onSuccess: (res) => {
       const session = res.data;
 
-      setSession(session.user, session.accessToken);
+      setSession(normalizeUser(session.user), session.accessToken);
       router.push(roleHome(session.user.role));
     },
   });

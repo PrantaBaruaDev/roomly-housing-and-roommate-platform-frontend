@@ -30,6 +30,8 @@ export const NAV_CONFIG: Record<Role, NavItem[]> = {
     { label: "Overview", href: "/admin", icon: LayoutGrid },
     { label: "Properties", href: "/admin/properties", icon: Building2 },
     { label: "Applications", href: "/admin/applications", icon: ClipboardList },
+    { label: "Invoices", href: "/admin/invoices", icon: Receipt },
+    { label: "Payments", href: "/admin/payments", icon: CreditCard },
     { label: "Users", href: "/admin/users", icon: Users },
   ],
   OWNER: [

@@ -24,16 +24,31 @@ export const apiClient = ofetch.create({
   },
 
   onResponseError({ response }) {
-    const message = (response._data && (response._data.message || response._data.error)) ||
+    const message =
+      (response._data && (response._data.message || response._data.error)) ||
       "Something went wrong. Please try again.";
 
     if (response.status === 401) {
-      useAuthStore.getState().clearSession();
+      const hadToken = Boolean(useAuthStore.getState().accessToken);
 
-      if (typeof window !== "undefined") {
-        const current = window.location.pathname + window.location.search;
-        const loginUrl = `/login?redirect=${encodeURIComponent(current)}`;
-        window.location.href = loginUrl;
+      if (hadToken) {
+        useAuthStore.getState().clearSession();
+
+        fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+        })
+          .catch(() => {
+            /* ignore — the redirect below still runs */
+          })
+          .finally(() => {
+            if (typeof window === "undefined") return;
+            const onAuthPage =
+              window.location.pathname.startsWith("/login") ||
+              window.location.pathname.startsWith("/register");
+            if (onAuthPage) return;
+            window.location.href = "/login";
+          });
       }
     }
 

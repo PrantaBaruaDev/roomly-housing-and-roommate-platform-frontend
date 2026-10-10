@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { useLogin, roleHome } from "@/hooks/use-auth";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth-store";
+import { useEffect, useState } from "react";
 
 const DEMO_ACCOUNTS = [
   { role: "Admin", email: "testeradmin@gmail.com", password: "Tester@admin12345", icon: ShieldCheck, accent: "text-blueprint" },
@@ -23,6 +25,25 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
   const login = useLogin();
+  const user = useAuthStore((s) => s.user);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    const home =
+      user.role === "ADMIN"
+        ? "/admin"
+        : user.role === "OWNER"
+          ? "/OWNER"
+          : "/tenant";
+    if (window.location.pathname !== home) {
+      router.replace(home);
+    }
+  }, [hydrated, user, router]);
 
   const {
     register,
