@@ -7,7 +7,7 @@ export function toPropertyCardVM(p: ApiProperty): PropertyCardVM {
     title: p.title,
     description: p.description,
     location: [p.address, p.city].filter(Boolean).join(", "),
-    ownerId: p.ownerId ?? "Unknown owner ID",
+    ownerId: p.ownerId,
     ownerName: p.owner?.name ?? "Unknown owner",
     ownerEmail: p.owner?.email ?? "",
     imageUrl: p.propertyImage,

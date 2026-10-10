@@ -37,6 +37,7 @@ export interface ApiProperty {
 
 export interface PropertyCardVM {
   id: string;
+  ownerId: string;
   title: string;
   description: string;
   location: string;
