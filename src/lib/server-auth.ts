@@ -18,7 +18,7 @@ export async function getServerUser(): Promise<ServerUser | null> {
   const decoded = decodeToken(token);
 
   if (!decoded?.role) return null;
-    if (isTokenExpired(decoded)) return null;
+  if (isTokenExpired(decoded)) return null;
 
   const raw = String(decoded.role).toUpperCase();
   if (raw !== "ADMIN" && raw !== "OWNER" && raw !== "TENANT") return null;
@@ -36,7 +36,6 @@ export async function getServerUser(): Promise<ServerUser | null> {
   };
 }
 
-/** Backend role → frontend dashboard path */
 export const ROLE_HOME: Record<ServerRole, string> = {
   ADMIN: "/admin",
   OWNER: "/owner",

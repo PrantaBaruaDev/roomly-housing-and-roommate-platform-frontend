@@ -35,7 +35,7 @@ export default function AdminOverviewPage() {
   );
   const invoiceVMs = (invoices.data?.data ?? []).map(toInvoiceCardVM);
 
-  const pendingApps = applicationVMs.filter((a) => a.status === "pending");
+  const pendingApps = applicationVMs.filter((a) => a.status === "PENDING");
   const unverifiedProps = propertyVMs.filter((p) => !p.isVerified);
   const unpaidInvoices = invoiceVMs.filter((i) => i.status === "issued");
 

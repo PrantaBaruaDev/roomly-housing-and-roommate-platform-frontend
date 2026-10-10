@@ -3,6 +3,22 @@ import { persist } from "zustand/middleware";
 import type { User } from "@/types/auth";
 import { clearRoleCookie, setRoleCookie } from "@/lib/auth-cookie";
 
+const ACCESS_COOKIE = "accessToken";
+const MAX_AGE = 60 * 60 * 24 * 7; 
+
+function writeAccessCookie(token: string) {
+  if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${ACCESS_COOKIE}=${encodeURIComponent(
+    token,
+  )}; path=/; max-age=${MAX_AGE}; samesite=lax${secure}`;
+}
+
+function clearAccessCookie() {
+  if (typeof document === "undefined") return;
+  document.cookie = `${ACCESS_COOKIE}=; path=/; max-age=0; samesite=lax`;
+}
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -17,23 +33,18 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       setSession: (user, accessToken) => {
         set({ user, accessToken });        
-        setRoleCookie(user.role);
+        writeAccessCookie(accessToken);
       },
       clearSession: () => {
         set({ user: null, accessToken: null });
-        clearRoleCookie();
+        clearAccessCookie();
       },
     }),
     { 
       name: "roomly-auth",
-      
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-      }),
 
       onRehydrateStorage: () => (state) => {
-        if (state?.user) setRoleCookie(state.user.role);
+        if (state?.accessToken) writeAccessCookie(state.accessToken);
       },
 
     }

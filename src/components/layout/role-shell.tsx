@@ -16,6 +16,12 @@ function normalizeUser(user: User): User {
   };
 }
 
+function readAccessCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
 export function RoleShell({
   role,
   children,
@@ -51,9 +57,11 @@ export function RoleShell({
   });
 
   useEffect(() => {
-    if (data) {
-      setSession(normalizeUser(data), "");
-    }
+    if (!data) return;
+    
+    const token = readAccessCookie();
+    setSession(normalizeUser(data), token ?? "");
+    
   }, [data, setSession]);
 
   useEffect(() => {
@@ -62,7 +70,7 @@ export function RoleShell({
       clearSession();
       router.replace("/login");
     }
-  }, [isError, hydrated, clearSession, router]);
+  }, [isError, hydrated, user, clearSession, router]);
 
   return <DashboardShell role={role}>{children}</DashboardShell>;
 }
