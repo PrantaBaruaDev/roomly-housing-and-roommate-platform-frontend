@@ -38,14 +38,18 @@ export function useCreateViewRequest() {
 }
 
 export function useUpdateViewRequest() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       id,
       ...payload
     }: { id: string } & UpdateViewRequestPayload) =>
       viewRequestsApi.update(id, payload),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.viewRequests.all }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: queryKeys.viewRequests.all });
+      qc.invalidateQueries({
+        queryKey: ["view-requests", "detail", vars.id],
+      });
+    },
   });
 }

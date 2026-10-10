@@ -48,3 +48,20 @@ export function useVerifyProperty() {
       queryClient.invalidateQueries({ queryKey: queryKeys.properties.all }),
   });
 }
+
+export function useUpdateProperty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: { id: string } & Partial<PropertyFormValues>) =>
+      propertiesApi.update(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.properties.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.properties.detail(variables.id),
+      });
+    },
+  });
+}

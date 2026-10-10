@@ -1,76 +1,168 @@
 "use client";
 
-import { Building2, ClipboardList, Users, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import {
+  Building2,
+  ClipboardList,
+  Users,
+  Receipt,
+  CreditCard,
+  ArrowRight,
+} from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { initials, formatDate } from "@/lib/utils";
-
-// Sample data — swap for useProperties()/useApplications() once the API is live.
-const recentApplications = [
-  { id: "1", tenantName: "Maya Torres", propertyTitle: "Birchwood House", roomNumber: "R-204", status: "pending", createdAt: "2026-09-18" },
-  { id: "2", tenantName: "Daniel Cho", propertyTitle: "Elm Street Flats", roomNumber: "R-102", status: "accepted", createdAt: "2026-09-16" },
-  { id: "3", tenantName: "Priya Nair", propertyTitle: "Birchwood House", roomNumber: "R-301", status: "pending", createdAt: "2026-09-15" },
-];
-
-const unverifiedProperties = [
-  { id: "1", title: "Elm Street Flats", ownerName: "Jonas Reyes", roomCount: 8 },
-  { id: "2", title: "Riverside Cottages", ownerName: "Sana Malik", roomCount: 5 },
-];
+import { Button } from "@/components/ui/button";
+import { useProperties } from "@/hooks/use-properties";
+import { useApplications } from "@/hooks/use-applications";
+import { useInvoices } from "@/hooks/use-invoices";
+import { usePayments } from "@/hooks/use-payments";
+import { toPropertyCardVM } from "@/lib/adapters/property";
+import { toApplicationCardVM } from "@/lib/adapters/application";
+import { toInvoiceCardVM } from "@/lib/adapters/invoice";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AdminOverviewPage() {
+  const properties = useProperties({ page: 1 });
+  const applications = useApplications({ page: 1 });
+  const invoices = useInvoices({ page: 1 });
+  const payments = usePayments({ page: 1 });
+
+  const propertyVMs = (properties.data?.data ?? []).map(toPropertyCardVM);
+  const applicationVMs = (applications.data?.data ?? []).map(
+    toApplicationCardVM,
+  );
+  const invoiceVMs = (invoices.data?.data ?? []).map(toInvoiceCardVM);
+
+  const pendingApps = applicationVMs.filter((a) => a.status === "pending");
+  const unverifiedProps = propertyVMs.filter((p) => !p.isVerified);
+  const unpaidInvoices = invoiceVMs.filter((i) => i.status === "issued");
+
+  const totalRevenue = (payments.data?.data ?? [])
+    .filter((p) => p.status === "COMPLETED")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const isLoading =
+    properties.isLoading ||
+    applications.isLoading ||
+    invoices.isLoading ||
+    payments.isLoading;
+
   return (
     <div>
-      <PageHeader title="Overview" description="Everything happening across the platform today." />
+      <PageHeader
+        title="Platform overview"
+        description="Everything happening across Roomly."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Properties" value={24} hint="+3 this month" icon={Building2} accent="blueprint" />
-        <StatCard label="Open applications" value={12} hint="4 need review" icon={ClipboardList} accent="brass" />
-        <StatCard label="Active tenants" value={87} hint="Across 24 properties" icon={Users} accent="moss" />
-        <StatCard label="Pending verification" value={2} hint="Awaiting admin sign-off" icon={ShieldAlert} accent="destructive" />
+        <StatCard
+          label="Properties"
+          value={properties.data?.meta?.total ?? propertyVMs.length}
+          hint={`${unverifiedProps.length} unverified`}
+          icon={Building2}
+          accent="blueprint"
+        />
+        <StatCard
+          label="Applications"
+          value={applications.data?.meta?.total ?? applicationVMs.length}
+          hint={`${pendingApps.length} pending`}
+          icon={ClipboardList}
+          accent="brass"
+        />
+        <StatCard
+          label="Invoices"
+          value={invoices.data?.meta?.total ?? invoiceVMs.length}
+          hint={`${unpaidInvoices.length} unpaid`}
+          icon={Receipt}
+          accent="moss"
+        />
+        <StatCard
+          label="Platform revenue"
+          value={formatCurrency(totalRevenue)}
+          hint="Completed payments"
+          icon={CreditCard}
+          accent="moss"
+        />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent applications</CardTitle>
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Pending applications */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle>Pending applications</CardTitle>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/admin/applications">
+                View all <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent className="flex flex-col divide-y divide-border">
-            {recentApplications.map((app) => (
-              <div key={app.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>{initials(app.tenantName)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{app.tenantName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {app.propertyTitle} · Room {app.roomNumber}
-                    </p>
-                  </div>
+            {isLoading && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Loading…
+              </p>
+            )}
+            {!isLoading && pendingApps.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No pending applications.
+              </p>
+            )}
+            {pendingApps.slice(0, 5).map((app) => (
+              <div
+                key={app.id}
+                className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {app.tenantName}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {app.propertyTitle} · Room {app.roomNumber}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <StatusBadge status={app.status} />
-                  <p className="mt-1 text-xs text-muted-foreground">{formatDate(app.createdAt)}</p>
-                </div>
+                <StatusBadge status={app.status} />
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
+        {/* Unverified properties */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle>Awaiting verification</CardTitle>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/admin/properties">
+                View all <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent className="flex flex-col divide-y divide-border">
-            {unverifiedProperties.map((property) => (
-              <div key={property.id} className="py-4 first:pt-0 last:pb-0">
-                <p className="text-sm font-medium">{property.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {property.ownerName} · {property.roomCount} rooms
-                </p>
+            {isLoading && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Loading…
+              </p>
+            )}
+            {!isLoading && unverifiedProps.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                All properties verified.
+              </p>
+            )}
+            {unverifiedProps.slice(0, 5).map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{p.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {p.ownerName} · {p.location}
+                  </p>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/admin/properties`}>Review</Link>
+                </Button>
               </div>
             ))}
           </CardContent>
