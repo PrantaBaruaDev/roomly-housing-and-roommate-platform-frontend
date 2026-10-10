@@ -15,7 +15,11 @@ export function useProperties(params?: {
   });
 }
 
-export function useOwnerProperties(params?: { page?: number; search?: string }) {
+export function useOwnerProperties(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
   return useQuery({
     queryKey: [...queryKeys.properties.all, "owner", params],
     queryFn: () => propertiesApi.listOwnerOwn(params),

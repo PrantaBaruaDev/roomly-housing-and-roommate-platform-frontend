@@ -55,7 +55,9 @@ export default function OwnerPropertiesPage() {
               <CardHeader className="flex-row items-start justify-between space-y-0">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="truncate">{p.title}</CardTitle>
+                    <CardTitle className="truncate">
+                      {p.title}
+                    </CardTitle>
                     {p.isVerified && (
                       <Badge
                         variant="outline"
@@ -115,8 +117,8 @@ export default function OwnerPropertiesPage() {
                     <span className="truncate">{p.ownerName}</span>
                   </div>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/owner/properties/${p.id}/rooms`}>
-                      Manage rooms
+                    <Link href={`/owner/properties/${p.id}`}>
+                      View Property & Manage rooms
                     </Link>
                   </Button>
                 </div>

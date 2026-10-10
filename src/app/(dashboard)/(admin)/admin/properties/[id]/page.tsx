@@ -316,9 +316,9 @@ export default function AdminPropertyDetailPage({
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2.5 text-xs">
                   <CopyableId id={id} label="Property" />
-                  {/* {property.ownerId && (
+                  {property.ownerId && (
                     <CopyableId id={property.ownerId} label="Owner" />
-                  )} */}
+                  )}
                 </CardContent>
               </Card>
             </div>
