@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { DoorOpen } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatCard } from "@/components/shared/stat-card";
 import { DataPagination } from "@/components/shared/data-pagination";
 import { RoomOccupantCard } from "@/components/shared/room-occupant-card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRoomOccupants } from "@/hooks/use-room-occupants";
 import { toRoomOccupantCardVM } from "@/lib/adapters/room-occupant";
@@ -55,7 +57,6 @@ export default function OwnerRoomOccupantsPage() {
         />
       </div>
 
-      {/* Filter tabs */}
       <div className="mt-6">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
           <TabsList>
@@ -104,6 +105,13 @@ export default function OwnerRoomOccupantsPage() {
                 key={occ.id}
                 occupant={occ}
                 viewerRole="owner"
+                actions={
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/owner/room-occupants/${occ.id}`}>
+                      View details
+                    </Link>
+                  </Button>
+                }
               />
             ))}
           </div>

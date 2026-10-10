@@ -1,11 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   MapPin,
   DoorOpen,
   CalendarDays,
   Wallet,
-  User,
   Home,
   Receipt,
 } from "lucide-react";
@@ -13,25 +13,28 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { CopyableId } from "@/components/shared/copyable-id";
 import { formatCurrency, initials } from "@/lib/utils";
 import type { RoomOccupantCardVM } from "@/types/room-occupant";
-import { CopyableId } from "./copyable-id";
 
 export function RoomOccupantCard({
   occupant,
   viewerRole = "owner",
+  actions,
 }: {
   occupant: RoomOccupantCardVM;
   viewerRole?: "owner" | "admin";
+  actions?: ReactNode;
 }) {
   const isSeat = occupant.bookingMode === "BOOK_BY_SEAT";
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start space-y-0 pb-3">
-        <div className="flex items-center justify-between border-b border-border py-3 mb-2">
+      <CardHeader className="flex-col space-y-0 pb-3">
+        <div className="w-full border-b border-border py-3">
           <CopyableId id={occupant.id} label="ID" />
         </div>
+
         <div className="mt-3 flex w-full items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="h-10 w-10">
@@ -39,7 +42,9 @@ export function RoomOccupantCard({
               <AvatarFallback>{initials(occupant.tenantName)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{occupant.tenantName}</p>
+              <p className="truncate text-sm font-medium">
+                {occupant.tenantName}
+              </p>
               <p className="truncate text-xs text-muted-foreground">
                 {occupant.tenantEmail}
               </p>
@@ -57,15 +62,14 @@ export function RoomOccupantCard({
             >
               {occupant.isActive ? "Active" : "Moved out"}
             </Badge>
-            {occupant.paymentStatus === "paid" && <StatusBadge status="paid" />}
+            {occupant.paymentStatus === "paid" && (
+              <StatusBadge status="paid" />
+            )}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
-
-
-        {/* Room + property */}
         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           <p className="flex items-center gap-1">
             <Home className="h-3 w-3 shrink-0" />
@@ -84,7 +88,6 @@ export function RoomOccupantCard({
           </p>
         </div>
 
-        {/* Divider */}
         <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
           <div className="flex flex-col gap-1 text-xs">
             <span className="flex items-center gap-1 text-muted-foreground">
@@ -119,6 +122,11 @@ export function RoomOccupantCard({
           )}
         </div>
 
+        {actions && (
+          <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-3">
+            {actions}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
